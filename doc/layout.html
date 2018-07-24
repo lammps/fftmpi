@@ -1,0 +1,87 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>Data layout 
+</H3>
+<P>Before giving details on how to use the library, we discuss data
+layout across processors and within a processor's memory.  Consider 2d
+and 3d arrays which are input to and output by 2d and 3d FFT and remap
+operations.  For parallel efficiency, an application may choose to
+distribute an array across processors in a variety of ways.  The FFT
+and remap operations allow specification of how an array is mapped to
+processors on input and also on output.  The two mappings can be the
+same or different.  The only requirement for a mapping is that each
+processor own a contiguous block-shaped subsection of the 2d or 3d
+array.  In 2d this is a rectangular-shaped section of the 2d array; in
+3d this is a brick-shaped section of the 3d array.  Or in array
+notation, each processor must own a subsection (ilo:ihi,jlo:jhi) of
+the global 2d array and similarly for 3d arrays.  Note that each array
+value (FFT grid point) must be uniquely owned by a single processor;
+the union of all subsections thus tiles the entire array.
+</P>
+<P>On each processor, the array values for its subsection must be stored
+contiguously in memory with a fast-varying index, a mid-varying index
+(for 3d), and a slow-varying index.  The FFT library does not know or
+care which indices correspond to which spatial dimensions (x,y,z); it
+treats the data as effectively a 1d vector and only needs to know
+which 2d or 3d indices vary fastest or slowest.  This means the
+library can be passed either C-style (last index varies fastest) or
+Fortran-style (first index varies fastest) arrays.  The caller simply
+specifies the fast, mid, and slow indices in different orders for the
+two cases.  It also means that C-style arrays of pointers to pointers
+are not allowed as arguments, unless they store the underlying 2d or
+3d data contiguous in memory.  In which case, the address of the
+underlying data is passed, not the top-level pointer.
+</P>
+<P>Each array element that is input/output to/from the FFT methods is a
+complex value.  For double-precision FFTs, a complex value must be
+stored as two contiguous 64-bit doubles (real and imaginary).  For
+single-precision FFTs it is two contiguous 32-bit floats.  Thus for
+double-precision FFTs, if a processor owns 1024 values in its
+subsection of a 2d or 3d array, it would allocate space for 2048
+contiguous doubles to store its values.
+</P>
+<P>The FFT and remap routines allow the option of permuting the order of
+the fast, mid, and slow indices on output. For example, in a 2d FFT, a
+processor can own data in row-wise ordering on input to the FFT and in
+column-wise ordering on output.
+</P>
+<P>It is also permissible for a particular processor to own no data on
+input and/or output, e.g. if there are more processors than grid
+points in a particular dimension.  In this case the processor
+subsection is input as (ilo:ihi,jlo:jhi) with ilo > ihi and/or jlo >
+jhi.
+</P>
+<P>Here are examples of data layouts that the FFT and remap methods
+allow:
+</P>
+<P>* Each processor initially owns a few rows (or columns) of a 2d or
+  planes of a 3d array and the transformed data is returned in the
+  same layout.
+</P>
+<P>* Each processor initally owns a few rows of a 2d array or planes or
+  pencils of a 3d array.  To save communication inside the FFT, it is
+  returned with each processor owning a few columns (2d) or planes or
+  pencils in a different dimension (3d).  Then a convolution can be
+  performed by the application, followed by an inverse FFT that
+  returns the data to its original decomposition.
+</P>
+<P>* Each processor initially owns a 2d or 3d subsection of the grid
+  (rectangles or bricks) and the transformed data is returned in the
+  same layout. Or it could be returned in a column-wise or pencil
+  layout as in the previous convolution example.
+</P>
+<P>What is NOT allowed in a data layout is for a procsesor to own a
+scattered or random set of rows, columns, array subsections, or array
+values. Such a data distribution might be natural, for example, in a
+torus-wrap mapping of a matrix to processors.  If this is the case in
+your application, you will need to write your own remapping method
+that puts the data in an acceptable layout for input to the FFT or
+remap operations.
+</P>
+<P>While the FFT routines allow for a wide variety of input and output
+data layouts, they work fastest with layouts directly usable by the
+parallel FFTs, without additional remappings being necessary. This is
+discussed in the optimization section.
+</P>
+</HTML>

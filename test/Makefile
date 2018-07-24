@@ -1,0 +1,98 @@
+# Makefile for FFT test drivers
+# type "make help" for options
+
+SHELL = /bin/sh
+
+# compiler/linker settings
+
+MPICC =		mpicxx
+MPIF90 = 	mpif90
+CCFLAGS =	-g -O3 $(PRECISION)
+F90FLAGS =	-g -O3 -cpp $(PRECISION)
+LINKFLAGS =	-g
+
+# memory, 1d FFT, precision settings
+
+MEM_INC =	-DFFT_MEMALIGN=64
+
+FFT_INC =       -I../src
+FFT_PATH =      -L../src
+FFT2D_LIB =     -lfft2dmpi $(FFT1D)
+FFT3D_LIB =     -lfft3dmpi $(FFT1D)
+
+EXTRA_INC =     $(MEM_INC) $(FFT_INC)
+EXTRA_PATH =    $(FFT_PATH)
+
+p = 		DOUBLE
+P =       	$(shell echo $(p) | tr a-z A-Z)
+
+ifeq ($(P),SINGLE)
+  PRECISION = -DFFT_SINGLE
+else
+  PRECISION = -DFFT_DOUBLE
+endif
+
+fft = 		kiss
+FFT =		$(shell echo $(fft) | tr a-z A-Z)
+
+ifeq ($(FFT),FFTW2)
+  FFT1D = -lfftw
+else ifeq ($(FFT),FFTW3)
+  ifeq ($p,single)
+    FFT1D = -lfftw3f
+  else
+    FFT1D = -lfftw3
+  endif
+else ifeq ($(FFT),FFTW)
+  ifeq ($p,single)
+    FFT1D = -lfftw3f
+  else
+    FFT1D = -lfftw3
+  endif
+else ifeq ($(FFT),MKL)
+  ifeq ($c,intel)
+    FFT1D = -L$(MKL_LIB) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+  else
+    FFT1D = -L$(MKL_LIB) -lmkl_gf_lp64 -lmkl_sequential -lmkl_core
+  endif
+else
+  FFT1D =
+endif
+
+# targets
+
+all:	clean test3d test2d test3d_c test2d_c test3d_f90 test2d_f90
+
+test3d:	test3d.o
+	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) test3d.o $(FFT3D_LIB) -o test3d
+
+test2d:	test2d.o
+	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) test2d.o $(FFT2D_LIB) -o test2d
+
+test3d_c:	test3d_c.o
+	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) test3d_c.o $(FFT3D_LIB) -o test3d_c
+
+test2d_c:	test2d_c.o
+	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) test2d_c.o $(FFT2D_LIB) -o test2d_c
+
+test3d_f90:	fft3d_wrap.o test3d_f90.o 
+	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test3d_f90.o $(FFT3D_LIB) \
+	-lstdc++ -o test3d_f90
+
+test2d_f90:	fft2d_wrap.o test2d_f90.o 
+	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test2d_f90.o $(FFT2D_LIB) \
+	-lstdc++ -o test2d_f90
+
+clean:
+	@rm -f *.o *.mod test3d test2d test3d_c test2d_c test3d_f90 test2d_f90
+
+# rules
+
+%.o:%.cpp
+	$(MPICC) $(CCFLAGS) $(EXTRA_INC) -c $<
+
+%.o:%.c
+	$(MPICC) $(CCFLAGS) $(EXTRA_INC) -c $<
+
+%.o:%.f90
+	$(MPIF90) $(F90FLAGS) $(EXTRA_INC) -c $<

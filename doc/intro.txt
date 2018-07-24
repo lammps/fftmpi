@@ -1,0 +1,36 @@
+"fftMPI documentation"_Manual.html
+
+Introduction :h3
+
+The Parallel FFT library was developed at Sandia National
+Laboratories, a US Department of Energy facility, with funding from
+the DOE. It is an open-source code, distributed freely under the terms
+of the Lesser GNU Public License (LGPL).  See the LICENSE file in the
+distribution.
+
+Include some history about original vs current version?
+
+The primary author of this package is Steve Plimpton, who can be
+contacted at sjplimp at sandia.gov.  This "download
+site"_http://www.sandia.gov/~sjplimp/download.html is where the latest
+version of this package can be downloaded.
+
+This library is designed for distributed-memory parallel machines
+using MPI.  The library only performs the data movement tasks
+necessary to compute multi-dimensional FFTs in parallel; the
+transforms themselves are computed by on-processor 1d FFT routines
+provided by vendors or the freely available FFTW package.  The data
+remapping routines can also be called directly (independent of the
+FFTs) to change the layout of 2d or 3d arrays across processors.
+
+The library is written in C++, but a C-style library interface is
+provided, along with Fortran and Python wrappers.  So the library can
+be called by C++ or C or any language that interfaces with C,
+e.g. Fortran or Python.
+
+The library should run on any parallel machine that supports MPI.  It
+also works with any size 2d or 3d arrays, so long as the native 1d FFT
+routines support the array dimensions.  It can be run on any number of
+processors, including in serial. The library allows considerable
+flexibility in the choice of initial and final data layout of the FFT
+grid across processors.

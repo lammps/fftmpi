@@ -1,0 +1,50 @@
+# Makefile for FFT library
+
+SHELL = /bin/sh
+
+LIB =   libfft.a
+SRC =	$(wildcard *.cpp)
+INC =	$(wildcard *.h)
+OBJ = 	$(SRC:.cpp=.o)
+
+# compiler/linker settings
+
+CC =		mpixlcxx_r
+CCFLAGS =	-g -O3 $(PRECISION)
+ARCHIVE =       ar
+ARCHFLAGS =     -rc
+
+# memory, MPI, 1d FFT, precision settings
+
+MEM_INC =	-DFFT_MEMALIGN=64
+MPI_INC =       
+
+fft = 		KISS
+FFT =		$(shell echo $(fft) | tr a-z A-Z)
+FFT_INC =       -DFFT_$(FFT)
+
+EXTRA_INC =     $(MEM_INC) $(MPI_INC) $(FFT_INC)
+
+p = 		DOUBLE
+P =       	$(shell echo $(p) | tr a-z A-Z)
+
+ifeq ($(P),SINGLE)
+  PRECISION = -DFFT_SINGLE
+else
+  PRECISION = -DFFT_DOUBLE
+endif
+
+# targets
+
+default: clean lib
+
+lib:	$(OBJ)
+	$(ARCHIVE) $(ARCHFLAGS) $(LIB) $(OBJ)
+
+clean:
+	@rm -f *.o libfft.a
+
+# rules
+
+%.o:%.cpp
+	$(CC) $(CCFLAGS) $(EXTRA_INC) -c $<

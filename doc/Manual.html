@@ -1,0 +1,72 @@
+<HTML>
+<HEAD>
+<TITLE>fftMPI Users Manual</TITLE>
+<META NAME="docnumber" CONTENT="6 Mar 2018 version">
+<META NAME="author" CONTENT="http://fftmpi.sandia.gov - Sandia National Laboratories">
+<META NAME="copyright" CONTENT="Copyright (2018) Sandia Corporation.  This software and manual is distributed under the GNU Lesser General Public License.">
+</HEAD>
+
+<BODY>
+
+<H1></H1>
+
+<CENTER><H2>Manual for the fftMPI library 
+</H2></CENTER>
+<P>6 Mar 2018 version
+</P>
+<P>The Parallel FFT library is designed to perform 2d and 3d
+complex-to-complex Fast Fourier Transforms (FFTs) efficiently on
+distributed-memory parallel computers using the message passing
+interface (MPI) library.
+</P>
+<HR>
+
+<UL><LI><A HREF = "intro.html">Introduction</A> 
+
+<LI><A HREF = "compile.html">Compiling the library</A> 
+
+<LI><A HREF = "buildtest.html">Compiling the test programs</A> 
+
+<LI><A HREF = "runtest.html">Running the test programs</A> 
+
+<LI><A HREF = "layout.html">Data layout</A> 
+
+<LI><A HREF = "#usage.html">Using the library from your program</A> 
+
+<UL><LI><A HREF = "syntax_c++.html">Syntax for calling the library from C++</A> 
+
+<LI><A HREF = "syntax_c.html">Syntax for calling the library from C</A> 
+
+<LI><A HREF = "syntax_fortran.html">Syntax for calling the library from Fortran</A> 
+</UL>
+<LI><A HREF = "optimize.html">Optimization</A> 
+</UL>
+<HR>
+
+<P>The fftMPI library was developed by Steve Plimpton at Sandia National
+Laboratories with help from several collaborators, listed below.
+Sandia is a US Department of Energy facility, with funding from the
+DOE through its Exascale Computing Program (ECP).  It is an
+open-source code, distributed freely under the terms of the Lesser GNU
+Public License (LGPL).  See the LICENSE file in the distribution.
+</P>
+<P>Additional collaborators:
+</P>
+<UL><LI>Axel Kohlmeyer, Temple University
+<LI>Paul Coffman, Argonne Leadership Computing Facility
+<LI>Phil Blood, Pittsburgh Supercomputing Center 
+</UL>
+<P>SJP: these links do not exist yet
+</P>
+<UL><LI><A HREF = "http://fftmpi.sandia.gov">fftMPI website</A> = documentation and tarball downloads
+<LI><A HREF = "http://lammps.github.org/lammps/fftmpi.git">GitHub site</A> = clone or report bugs, pull requests, etc
+<LI>Questions, bugs, suggestions: email to sjplimp at sandia.gov or post to GitHub 
+</UL>
+<P>My thanks to Bruce Hendrickson and Sue Minkoff at Sandia for useful
+discussions about parallel FFT strategies and to the FFTW authors for
+the idea of using "plans" as an object-oriented tool for hiding FFT
+and remap details from the user.
+</P>
+</BODY>
+
+</HTML>

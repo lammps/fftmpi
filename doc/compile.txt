@@ -1,0 +1,45 @@
+"fftMPI documentation"_Manual.html
+
+Compiling the library :h3
+
+From the src directory, simply type 
+
+make :pre
+
+This should build the library, so long as you have MPI installed and
+available in your path.  The standard Makefile uses mpicxx for
+compiling and linking.  The resulting library file is libfft.a.
+There are also several Makefile.machine files provided that
+work on different machines.  You can use one of them or
+created your own edited file and invoke it as
+
+make -f Makefile.machine :pre
+
+You should only need to edit the "compiler/linker settings"
+section at the top of the Makefile.
+
+There are 2 options that can be set via the make command, via
+the "fft" and/or "p" variables:
+
+make fft=FFT1d p=PRECISION :pre
+
+The "fft" variable determines which 1d FFT library is used.  The
+options for "FFT1d" are FFTW, FFTW3, FFTW2, MKL, or KISS, in either
+lower- or upper-case.  FFTW is the same as FFTW3.  KISS is the
+default, if "fft" is not specified.
+
+If you specify FFTW2 or FFTW3 or MKL the Makefile assumes the
+directories for their respective include files are in your path.
+These files are fftw.h or sfftw.h for double/single precision for
+FFTW2, fftw3.h for FFTW3, and mkl_dfti.h for MKL.  The KISS library
+(kissfft.h) is included in the src dir.
+
+If the appropriate include file is not found, you will need to add a
+setting for the directory to FFT_INC in the Makefile, something like
+-I/home/me/include.
+
+The "p" variable determines whether double or single precision FFTs
+are performed.  The options for PRECISION are single or double, in
+either lower- or upper-case.  Double is the default, if "p" is not
+specified.
+

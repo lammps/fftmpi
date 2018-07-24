@@ -1,0 +1,174 @@
+"fftMPI documentation"_Manual.html
+
+Running the test programs :h3
+
+The test programs illustrate how to use the Parallel FFT library.
+They also enable testing and benchmarking of all the options the
+library supports.  These options are specified via command-line
+arguments, all of which have default values, as indicated below.  All
+of the programs can be launched serially (one processor) or via mpirun
+on multiple processors.
+
+Here are examples:
+
+test3d -g 100 100 100 -n 50
+test3d_c -g 100 100 100 -n 50 -m 1
+mpirun -np 8 test3d_f90 -g 100 100 100 -n 50
+mpirun -np 16 test2d -g 1000 2000 -n 100
+mpirun -np 4 test2d_c -g 500 500 -n 1000 -i 492893 -v
+test2d_f90 -g 256 256 -n 1000 :pre
+
+The test3d (C++) and test3d_c (C) programs perform 3d FFTs and use
+identical command-line arguments, as listed here.  The test3d_f90
+(F90) program only currently supports the -h, -g, and -n options from
+this list.  All of the 3d programs should produce identical numerical
+results, and give very similar performance.
+
+Syntax: test3d switch args switch args ...
+  -h = print help message
+  -g Nx Ny Nz = grid size (default = 8 8 8)
+  -pin Px Py Pz = proc grid (default = 0 0 0)
+     specify 3d grid of procs for initial partition
+     0 0 0 = code chooses Px Py Pz, will be bricks
+  -pout Px Py Pz = proc grid (default = 0 0 0)
+     specify 3d grid of procs for final partition
+     0 0 0 = code chooses Px Py Pz
+             will be bricks for mode = 0/2
+             will be z pencils for mode = 1/3
+  -n Niter = iteration count (default = 1)
+  -m 0/1/2/3 = FFT mode (default = 0)
+     0 = 1 iteration = forward full FFT, backward full FFT
+     1 = 1 iteration = forward convolution FFT, backward convolution FFT
+     2 = 1 iteration = just forward full FFT
+     3 = 1 iteration = just foward convolution FFT
+     full FFT returns data to original layout
+     forward convolution FFT is brick -> z-pencil
+     backward convolution FFT is z-pencil -> brick
+  -i zero/step/index/82783 = initialization (default = zero)
+     zero = initialize grid with 0.0
+     step = initialize with 3d step function
+     index = ascending integers 1 to Nx+Ny+Nz
+     digits = random number seed
+  -c point/all/combo = communication flag (default = point)
+     point = point-to-point comm
+     all = use MPI_all2all collective
+     combo = point for pencil2brick, all2all for pencil2pencil
+  -e pencil/brick = exchange flag (default = pencil)
+     pencil = pencil to pencil data exchange (4 stages for full FFT)
+     brick = brick to pencil data exchange (6 stages for full FFT)
+  -p array/ptr/memcpy
+     pack/unpack methods for data remapping (default = array)
+     array = array based
+     ptr = pointer based
+     memcpy = memcpy based
+  -t summary/details = timing info (default = summary)
+     summary timings or detailed timing breakdown
+  -r = remap only, no 1d FFTs
+     useful for debugging
+  -o output initial/final grid
+     only useful for small problems
+  -v = verify correctness of answer (default = no -v)
+     only possible init = step/digits, and FFT mode 0/1 :pre
+
+The test2d (C++) and test2d_c (C) programs perform 2d FFTs and use
+identical command-line arguments, as listed here.  The test2d_f90
+(F90) program only currently supports the -h, -g, and -n options from
+this list.  All of the 2d programs should produce identical numerical
+results, and give very similar performance.
+
+Syntax: test2d switch args switch args ...
+  -h = print help message
+  -g Nx Ny = grid size (default = 8 8)
+  -pin Px Py = proc grid (default = 0 0)
+     specify 2d grid of procs for initial partition
+     0 0 = code chooses Px Py, will be bricks
+  -pout Px Py = proc grid (default = 0 0)
+     specify 2d grid of procs for final partition
+     0 0 = code chooses Px Py
+           will be bricks for mode = 0/2
+           will be y pencils for mode = 1/3
+  -n Niter = iteration count (default = 1)
+  -m 0/1/2/3 = FFT mode (default = 0)
+     0 = 1 iteration = forward full FFT, backward full FFT
+     1 = 1 iteration = forward convolution FFT, backward convolution FFT
+     2 = 1 iteration = just forward full FFT
+     3 = 1 iteration = just foward convolution FFT
+     full FFT returns data to original layout
+     forward convolution FFT is brick -> y-pencil
+     backward convolution FFT is y-pencil -> brick
+  -i zero/step/index/82783 = initialization (default = zero)
+     zero = initialize grid with 0.0
+     step = initialize with 2d step function
+     index = ascending integers 1 to Nx+Ny
+     digits = random number seed
+  -c point/all/combo = communication flag (default = point)
+     point = point-to-point comm
+     all = use MPI_all2all collective
+     combo = point for pencil2brick, all2all for pencil2pencil
+  -e pencil/brick = exchange flag (default = pencil)
+     pencil = pencil to pencil data exchange (3 stages for full FFT)
+     brick = brick to pencil data exchange (4 stages for full FFT)
+  -p array/ptr/memcpy
+     pack/unpack methods for data remapping (default = array)
+     array = array based
+     ptr = pointer based
+     memcpy = memcpy based
+  -t summary/details = timing info (default = summary)
+     summary timings or detailed timing breakdown
+  -r = remap only, no 1d FFTs
+     useful for debugging
+  -o output initial/final grid
+     only useful for small problems
+  -v = verify correctness of answer (default = no -v)
+     only possible init = step/digits, and FFT mode 0/1 :pre
+
+Here is an overview of the different command-line options.
+
+The -g option is for the FFT grid size.
+
+The -pin and -pout options determine how the FFT grid is partitioned
+across processors before and after the FFT.
+
+The -n option is the iteration count.
+
+The -m option selects between full FFTs versus convolution FFTs.  For
+full FFTs, a forward FFT returns data to its original decomposition.
+Likewise for an inverse FFT.  For convolution FFTS, the data is left
+in a z-pencil decomposition after a 3d forward FFT or a y-pencil
+decomposition after a 2d forward FFT.  The inverse FFT starts from the
+z- or y-pencil decomposition and returns the data to its original
+decomposition.
+
+The -i option determines how the values in the FFT grid are
+initialized.
+
+The -c option determines whether point2point or all2all communication
+is performed when the FFT grid data is trasposed between sucessive 1d
+FFTs.
+
+The -e option is specified as pencil or brick.  For 3d FFTs with
+pencil, there are 4 communication stages for a full FFT: brick ->
+x-pencil -> y-pencil -> z-pencil -> brick.  Or 3 for a 3d convoultion
+FFT (last stage is skipped).  Or 3 for a full 2d FFT (no z-pencil
+decomposition).  Or 2 for a 2d convolution FFT.  For 3d FFTs with
+brick, there are 6 communication stages for a full FFT: brick ->
+x-pencil -> brick -> y-pencil -> brick -> z-pencil -> brick.  Or 5 for
+a 3d convoultion FFT (last stage is skipped).  Or 4 for a full 2d FFT
+(no z-pencil decomposition).  Or 3 for a 2d convolution FFT.
+
+The -p option uses different low-level methods for packing
+and unpacking FFT data this is sent as messages via MPI.
+
+The -t option determines how much timing output is generated.
+
+The -r option performs no 1d FFTs, it only moves the FFT
+grid data between processors.
+
+The -o option prints out grid values before and after the FFTs.
+It should only be used for small grids, else the volume
+of output can be immense.
+
+The -v option verifies a correct result after a forward and inverse
+FFT is performed.  The results for each grid point should be within
+epsilon of the starting values.
+

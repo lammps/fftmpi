@@ -1,0 +1,29 @@
+This is the March 2018 version of the fftMPI library.
+
+The list of authors is below.  The contact author is
+
+Steve Plimpton
+Sandia National Laboratories
+sjplimp@sandia.gov
+http://www.sandia.gov/~sjplimp
+
+The fftMPI library is distributed as open-source code under the
+GNU LGPL license.  See the accompanying LICENSE file.
+
+This directory contains the following:
+
+README         this file
+LICENSE        GNU LGPL license
+doc            doc pages, start with Manual.html
+src            source files for library
+test	       test FFT codes in C++, C, Fortran 90, Python
+
+Note that this is preliminary version of the library.  It will soon
+have a website with a downloadable tarball and also be available on
+GitHub.
+
+Contributing authors:
+  Steve Plimpton (Sandia)
+  Axel Kohlmeyer (Temple U), support for FFTW3, KISSFFT, Dfti
+  Paul Coffman (IBM, now ALCF), added MPI collective remap
+  Phil Blood (PSC), added single precision FFTs

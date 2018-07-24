@@ -1,0 +1,23 @@
+"fftMPI documentation"_Manual.html
+
+Optimization :h3
+
+As noted above, communication cost in the FFTs can be minimized by
+choosing appropriate input and output data layouts.  For both 2d and
+3d FFTs an optimal input layout is one where each processor already
+owns the entire fast-varying dimension of the data array and each
+processor has (roughly) the same amount of data.  In this case, no
+initial remapping of data is required; the first set of 1d FFTs can be
+performed immediately.
+
+Similarly, an optimal output layout is one where each proc owns the
+entire slow-varying dimension and again (roughly) the same amount of
+data.  Additionally it is one where the permutation is specified as 1
+for 2d and as 2 for 3d.  In this case, no final remapping of data is
+required; the data is simple left in the layout used for the final set
+of 1d FFTs.
+
+Note that these input and output layouts may or may not make sense for
+a specific application.  But using either or both of them will reduce
+the cost of the FFT operation.
+

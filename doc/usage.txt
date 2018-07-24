@@ -1,0 +1,59 @@
+"fftMPI documentation"_Manual.html
+
+Using the library from your program :h3
+
+The discussion in this section and the following C++, C, Fortran
+sections assumes the program is performing 3d FFTs.  Just change 3d to
+2d for programs that perform 2d FFTs.
+
+To use the Parallel FFT library from any program (C++, C, Fortran) the
+following steps are necessary.
+
+Link the program with the Parallel FFT library in src/libfft.a and
+also with the 1d FFT library that corresponds to the settings made for
+1d FFTs and precision (double vs single) when the FFT library was
+built.  The latter may require a -Ldir setting in the link command.
+:ulb,l
+
+Insure that the precision of data allocation for FFT grids matches the
+precision setting (double vs single) used when the FFT library was
+built.  As discussed above in the "Data layout"_#data section, this
+means allocation of doubles for double precision FFTs (2 doubles per
+complex value) and allocation of floats for single precision
+FFTs. :l,ule
+
+To use the Parallel FFT library from a C++ program, the following
+additional steps are necessary.  See the test/test3d.cpp file as an
+example:
+
+Include src/fft3d.h in program files which instantiate or call methods
+from the FFT3d class.  The compilation of these files will need to be
+able to find the include file used by the 1d FFT library specified
+when the library was built.  This may require a -Idir setting in the
+compile command. :ulb,l
+
+Add the line "using namespace FFT_NS;" at the top of the same program
+files. :l
+
+See the section "Syntax for calling the library from C++"_#syntax_c++
+below for specifics of how to make library calls from C++. :l,ule
+
+To use the Parallel FFT library from a C program, the following
+additional steps are necessary.  See the test/test3d_c.c file as an
+example:
+
+Include src/fftlib.h in program files which call methods from the
+library C-interface. :ulb,l
+
+Insure the pointer returned from fft3d_create() is stored in an 8-byte
+variable (void * pointer) by the program.  This pointer is passed in
+all subsequent calls to the library. :l,ule
+
+To use the Parallel FFT library from a Fortran program, the following
+additional steps are necessary.  See the test/test3d_f90.f90 file as
+an example:
+
+Insure the pointer returned from fft3d_create() is stored in an 8-byte
+variable (integer or floating point) by the program. This pointer is
+passed in all subsequent calls to the library. :ulb,l,ule
+

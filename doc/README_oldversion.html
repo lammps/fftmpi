@@ -1,0 +1,673 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+    <META NAME="Generator" CONTENT="Cosmo Create 1.0.3">
+</HEAD>
+<BODY>
+<H2>
+Parallel FFT Package</H2>
+<UL>
+    <LI>
+    <A HREF="#_cch3_931359433">Introduction</A> 
+    <LI>
+    <A HREF="#_cch3_931359440">Why I wrote my own parallel FFTs</A> 
+    <LI>
+    <A HREF="#_cch3_931359445">Compling</A> 
+    <LI>
+    <A HREF="#_cch3_931359450">Data Layout</A> 
+    <LI>
+    <A HREF="#_cch3_931359457">Routine usage</A> 
+    <LI>
+    <A HREF="#_cch3_931359462">Calling syntax for 2d FFTs</A> 
+    <LI>
+    <A HREF="#_cch3_931359467">Calling syntax for 3d FFTs</A> 
+    <LI>
+    <A HREF="#_cch3_931359473">Calling syntax for 2d remaps</A> 
+    <LI>
+    <A HREF="#_cch3_931359478">Calling syntax for 3d remaps</A> 
+    <LI>
+    <A HREF="#_cch3_931359483">Optimization</A> 
+    <LI>
+    <A HREF="#_cch3_931359489">Calling from Fortran</A> 
+    <LI>
+    <A HREF="#_cch3_931359494">Precision</A> 
+    <LI>
+    <A HREF="#_cch3_931359499">Other Options</A> 
+    <LI>
+    <A HREF="#_cch3_931359505">Acknowledgements</A> 
+</UL>
+<HR>
+<H3>
+<A NAME="_cch3_931359433">Introduction</A></H3>
+<P>
+This package is a set of routines to perform 2d and 3d
+complex-to-complex Fast Fourier Transforms (FFTs) efficiently on
+parallel computers.
+<P>
+It was developed at Sandia National Laboratories, a US Department
+of Energy facility, with funding from the DOE.  It is an open-source
+code, distributed freely under the terms of the GNU Public License
+(GPL) - see the LICENSE file in the distribution.
+<P>
+The author of this package is <A HREF =
+"http://www.cs.sandia.gov/~sjplimp">Steve Plimpton</A>, who can be
+contacted at <A HREF =
+"mailto:sjplimp@sandia.gov">sjplimp@sandia.gov</A> This <A HREF =
+"http://www.cs.sandia.gov/~sjplimp/download.html">download site</A> at
+www.cs.sandia.gov/~sjplimp/download.html is where the latest version
+of this package can be downloaded.
+<P>
+These routines are designed for distributed-memory parallel
+machines and use MPI as their message-passing protocol. Actually the
+routines only perform the data movement tasks necessary to compute
+multi-dimensional FFTs in parallel; the transforms themselves are
+computed by on-processor 1d FFT routines provided by the machine
+vendor or the freely available <A HREF="http://www.fftw.org">FFTW</A>
+package. The data remapping routines can also be called directly by
+the user (independent of the FFTs) to change the layout of an
+application's 2d or 3d arrays across processors. </P>
+<P>
+The parallel FFT and remapping routines are written in C, are callable 
+from Fortran, are portable to any parallel machine that supports MPI, 
+can be run on any number of processors (including a single processor), 
+work with any size arrays (so long as the native 1d FFT routines 
+support the array dimensions), and allow considerable flexibility in 
+the choice of initial and final data layout across processors.</P>
+<P>
+<HR>
+<H3>
+<A NAME="_cch3_931359440">Why I wrote my own parallel FFTs</A></H3>
+<P>
+There are other distributed-memory parallel FFTs available including 
+some provided by vendors and in the <A HREF="http://www.fftw.org">FFTW</A>
+ package. I wrote my own because I wanted flexibility in the grid sizes, 
+# of procesors, and in the data layout used as input/output by the 
+FFTs. Also I needed data remapping routines for other parts of my 
+applications; once you have written parallel remapping routines, 
+turning them into parallel FFTs is a straightforward extension.</P>
+<P>
+I use these FFTs in materials modeling applications, specifically for
+long-range Coulombic solvers in molecular dynamics simulations and for
+plane-wave electronic structure computations. See my <A
+HREF="http://www.cs.sandia.gov/~sjplimp">home page</A> for more
+information on these applications, such as the <A
+HREF="http://www.cs.sandia.gov/~sjplimp/lammps.html">LAMMPS molecular
+dynamics</A> code.</P>
+<P>
+These FFT routines perform their data remapping similar to the way an 
+MPI_Alltoall function works: each processor in a group sends a message 
+to every other processor in the group. The group can be all the 
+processors or a subset, depending on the data layout. An alternative 
+method that I've used previously is to do recursive swapping in a 
+hypercube style of communication -- see J. S. Nelson, S. J. Plimpton, 
+M. P. Sears, Phys Rev B, 47, 1765-1774 (1993).</P>
+<P>
+The latter method requires less messages, but a larger volume of data 
+to be shipped. It's also hard to implement on a non-power-of-two # of 
+processors. I believe the all-to-all style works better on current 
+parallel machines with low communication latencies (e.g. the Intel and 
+Cray T3E) and when processor groups can be made small (3d FFTs); I'm 
+not sure which approach is better on high-latency machines such as 
+clusters or for 2d FFTs.</P>
+<HR>
+<H3>
+<A NAME="_cch3_931359445">Compiling</A></H3>
+<P>
+The appropriate routines from this package should be compiled and 
+linked with your application. For a 2d FFT, use fft_2d.c, remap_2d.c, 
+and pack_2d.c and their associated *.h files. The analogous 3d files 
+are used for 3d FFTs. To use only the remapping routines, the fft_* 
+files are not needed.</P>
+<P>
+You must compile the fft routines with a -D compiler flag appropriate 
+to the 1d FFT machine libraries you intend to use. Available switches 
+are FFT_INTEL (i.e. -DFFT_INTEL) for the Intel Paragon and Intel 
+Tflops, FFT_SGI for SGI machines, FFT_DEC for Dec machines, and FFT_T3E 
+for the Cray T3E. If the portable FFTW library is installed on your 
+machine, the FFT_FFTW switch may be used instead. To use only the 
+remapping routines an FFT switch is not needed. On the T3E you also 
+must use the T3E_KLUDGE switch (i.e. -DT3E_KLUDGE) for both the fft and 
+remapping routines. You must also enable the needed compiler and link 
+options appropriate for the 1d FFT libraries you are using and any 
+associated include files they require. </P>
+<HR>
+<H3>
+<A NAME="_cch3_931359450">Data Layout</A></H3>
+<P>
+Before giving the details of how to call the 3 functions, I'll discuss 
+data layout across processors and within a processor's memory. Consider 
+2d and 3d arrays which are operated on by 2d and 3d FFTs and remaps. In 
+your application you may wish, for parallel efficiency, to distribute 
+an array across processors in a variety of ways. The FFT and remap 
+routines allow you to specify how an array is mapped to processors on 
+input to the routine and on output. The only requirement for a mapping 
+is that each processor own a sub-section of the 2d or 3d array. In 2d 
+this is a rectangular-shaped section of the 2d array; in 3d this is a 
+brick-shaped section of the 3d array. Or in array notation, each 
+processor must own a subsection (ilo:ihi,jlo:jhi) of the global 2d 
+array and similarly for 3d arrays. </P>
+<P>
+On each processor, the elements for its subsection must be stored 
+contiguously in memory with a fast-varying index, a mid-varying index 
+(for 3d), and a slow-varying index. This means the routines can be 
+called with either C-style (last index varies fastest) or Fortran-style 
+(first index varies fastest) arrays; the calling routine only specifies 
+the range of the fast, mid, and slow indices. It also means that 
+C-style arrays of pointers to pointers are not allowed; the data must 
+be contiguous in memory. For a good discussion of why this is the best 
+way to store data on current RISC processors, see the <A
+ HREF="http://www.fftw.org">FFTW</A> documentation. Basically it's 
+cheaper to do integer arithmetic to compute an array offset than it is 
+to dereference pointers since the latter requires additional memory 
+fetches.</P>
+<P>
+The FFT and remap routines allow the option of permuting the order of 
+the fast, mid, and slow indices on output.  In a 2-d FFT for example,
+a processor can own data in a row-wise ordering on input to the FFT and
+in a column-wise ordering on output.</P>
+<P>
+Note that there is an implicit assumption that the subsections owned by 
+all the processors do not overlap and that their union exactly tiles 
+the global 2d or 3d array. It is also permissible for a particular 
+processor owns no data on input and/or output, for example if the 
+processor's subsection is input as (ilo:ihi,jlo:jhi) and ilo &gt; ihi. </P>
+<P>
+Here are some examples of the data layouts that the FFT and remap 
+routines will thus allow: </P>
+<P>
+* Each processor initially owns a few rows (or columns) of a 2d or 3d 
+array and the transformed data is returned in the same layout. </P>
+<P>
+* Each processor initally owns a few rows of the array; to save 
+inter-processor communication inside the FFT, it is returned with each 
+processor owning a few columns. Then a convolution can be performed by 
+the application, followed by an inverse FFT that returns the data in 
+the original row-wise layout. </P>
+<P>
+* Each processor initially owns a 2d or 3d subsection of the grid and 
+the transformed data is returned in the same layout. Or it could be 
+returned in a column-wise layout as in the previous convolution 
+example. </P>
+<P>
+What is NOT allowed in a data layout is for a procsesor to own a 
+scattered or random set of rows, columns, or subsections. Such a data 
+distribution might be natural, for example, in a torus-wrap mapping of 
+a matrix to processors. If this is the case in your application, you 
+will need to write your own remapping routine that puts the data in an 
+acceptable layout before calling the FFTs. </P>
+<P>
+While the FFT routines allow for a wide variety of input and output 
+data layouts, they work fastest with layouts directly usable by the 
+parallel FFTs, without pre- or post-remappings being necessary. This is 
+discussed in the <A HREF="#_cch3_931359483">optimization</A> section.</P>
+<HR>
+<H3>
+<A NAME="_cch3_931359457">Routine usage</A></H3>
+<P>
+To perform an FFT (or remap) there are 3 function calls to understand. 
+Before performing an FFT for the 1st time, you create a 
+&quot;plan&quot; that pre-computes and stores internally all the 
+information needed to do an FFT in parallel (see <A
+ HREF="#_cch3_931359505">Acknowledgements)</A>. The plan is unique to a 
+particular sized array and an initial and final data layout across 
+processors. You can create as many plans as you need in your 
+application, though one is often sufficient. Then you perform one or 
+more FFTs using a specific plan. Finally when you are finished using a 
+plan for the last time, you destroy it to free up the memory it 
+consumes.</P>
+<P>
+For example, to perform 2d FFTs in C you do somthing like the
+following.  Note that in C, the indices used as calling arguments and
+to index into the data arrays are C-style, meaning that they run from
+0 to N-1.  When calling the routines from Fortran, use Fortran-style
+indices that run from 1 to N.  You can see Fortran examples for
+calling the routines in the test codes provided in the distribution.
+</P>
+<PRE>
+#include &quot;fft_2d.h&quot;
+
+  fft_2d_plan *plan;
+  FFT_DATA *data;
+  int in_ilo,in_ihi,in_jlo,in_jhi;
+  int out_ilo,out_ihi,out_jlo,out_jhi;
+  int bufsize;
+  int me;
+
+  MPI_Comm_rank(MPI_COMM_WORLD,&amp;me);
+
+  nx,ny = size of global FFT grid
+  in_ilo,in_ihi,in_jlo,in_jhi = portion of grid to be
+                                owned by this proc on input
+  out_ilo,out_ihi,out_jlo,out_jhi = portion of grid to be
+                                    owned by this proc on output
+
+  plan = fft_2d_create_plan(MPI_COMM_WORLD,nx,ny,
+                            in_ilo,in_ihi,in_jlo,in_jhi,
+                            out_ilo,out_ihi,out_jlo,out_jhi,
+			    1,0,&bufsize);
+  if (plan == NULL) printf(&quot;ERROR: FFT plan failed on proc %d\n&quot;,me);
+
+  data = ...  /* allocate data array and 
+                 fill with values owned by this proc */
+
+                              /* forward & reverse FFTs */ 
+  fft_2d(data,data,1,plan);      /* do this as many */
+  ...                            /*    times as     */
+  fft_2d(data,data,-1,plan);     /*     needed      */
+
+  fft_2d_destroy_plan(plan);
+
+</PRE>
+<P>
+The create_plan routines return NULL if there was an error creating a 
+plan, typically due to a lack of memory.</P>
+<P>
+In MPI parlance, all the FFT and remap calls are collective in the 
+sense they need to be called by all the processors in the communicator 
+in order to complete successfully. Typically this would be 
+MPI_COMM_WORLD (all the processors), but it can be a communicator for a 
+subset of the processors. This allows multiple sets of processors to be 
+doing their own FFTs simultaneously on their own data arrays, if 
+desired.</P>
+<P>
+When calling the FFT routines from C, you include the file "fft_2d.h"
+or "fft_3d.h" in your application's C file.  This defines a complex
+data type FFT_DATA which is used to store the data you pass into and
+receive back from the FFT routines.  When calling the FFT routines
+from Fortran (F90 or F77) no header file is needed; you just pass in
+the usual Fortran complex array.  Similarly, when calling the remap
+routines from your C application, the "remap_2d.h" or "remap_3d.h"
+header file should be included.  The data arrays passed to the remap
+routines are just C doubles.</P>
+<HR>
+<H3>
+<A NAME="_cch3_931359462">Calling syntax for 2d FFTs </A></H3>
+<H4>
+A. Create a plan for performing a 2d FFT: </H4>
+<PRE>
+struct fft_plan_2d *fft_2d_create_plan(
+         MPI_Comm comm,
+         int nfast, int nslow,
+         int in_ilo, int in_ihi,
+         int in_jlo, int in_jhi,
+         int out_ilo, int out_ihi,
+         int out_jlo, int out_jhi,
+         int scaled, int permute, int *nbuf) 
+</PRE>
+<UL>
+    <LI>
+    comm = MPI communicator for the group of procs which own the 3d data 
+    set 
+    <LI>
+    nfast,nslow = size of global 3d data set 
+    <LI>
+    in_ilo,in_ihi = input bounds of data I own in fast index 
+    <LI>
+    in_jlo,in_jhi = input bounds of data I own in slow index 
+    <LI>
+    out_ilo,out_ihi = output bounds of data I own in fast index 
+    <LI>
+    out_jlo,out_jhi = output bounds of data I own in slow index 
+    <LI>
+    scaled = whether FFT output gets scaled by 1/N or not 
+    <UL>
+        <LI>
+        0 = no scaling 
+        <LI>
+        1 = scaling 
+    </UL>
+    <LI>
+    permute = permutation in storage order of fast/slow on output 
+    <UL>
+        <LI>
+        0 = no permutation 
+        <LI>
+        1 = permute once = slow-&gt;fast, fast-&gt;slow 
+    </UL>
+    <LI>
+    nbuf = returned size of internal storage buffers used by FFT on this 
+    proc 
+</UL>
+<H4>
+B. Perform a 2d FFT: </H4>
+<PRE>
+void fft_2d(FFT_DATA *in, FFT_DATA *out, int flag,
+            fft_plan_2d *plan) 
+</PRE>
+<UL>
+    <LI>
+    in = starting address of complex input data on this proc 
+    <LI>
+    out = starting address of where complex output data for this proc will 
+    be placed (can be same as in) 
+    <LI>
+    flag = forward or backward FFT 1 = forward FFT -1 = backward FFT 
+    <LI>
+    plan = plan returned by previous call to fft_2d_create_plan 
+</UL>
+<H4>
+C. Destroy a 2d FFT plan: </H4>
+<PRE>
+void fft_2d_destroy_plan(struct fft_plan_2d *plan) 
+</PRE>
+<UL>
+    <LI>
+    plan = plan returned by previous call to fft_2d_create_plan 
+</UL>
+<HR>
+<H3>
+<A NAME="_cch3_931359467">Calling syntax for 3d FFTs</A></H3>
+<H4>
+A. Create a plan for performing a 3d FFT: </H4>
+<PRE>
+struct fft_plan_3d *fft_3d_create_plan(
+         MPI_Comm comm,
+         int nfast, int nmid, int nslow,
+         int in_ilo, int in_ihi,
+         int in_jlo, int in_jhi,
+         int in_klo, int in_khi,
+         int out_ilo, int out_ihi,
+         int out_jlo, int out_jhi,
+         int out_klo, int out_khi,
+         int scaled, int permute, int *nbuf) 
+</PRE>
+<UL>
+    <LI>
+    comm = MPI communicator for the group of procs which own the 3d data 
+    set 
+    <LI>
+    nfast,nmid,nslow = size of global 3d data set 
+    <LI>
+    in_ilo,in_ihi = input bounds of data I own in fast index 
+    <LI>
+    in_jlo,in_jhi = input bounds of data I own in mid index 
+    <LI>
+    in_klo,in_khi = input bounds of data I own in slow index 
+    <LI>
+    out_ilo,out_ihi = output bounds of data I own in fast index 
+    <LI>
+    out_jlo,out_jhi = output bounds of data I own in mid index 
+    <LI>
+    out_klo,out_khi = output bounds of data I own in slow index 
+    <LI>
+    scaled = whether forward ??? FFT output gets scaled by 1/N or not 
+    <UL>
+        <LI>
+        0 = no scaling 
+        <LI>
+        1 = scaling 
+    </UL>
+    <LI>
+    permute = permutation in storage order of fast/mid/slow on output 
+    <UL>
+        <LI>
+        0 = no permutation 
+        <LI>
+        1 = permute once = mid-&gt;fast, slow-&gt;mid, fast-&gt;slow 
+        <LI>
+        2 = permute twice = slow-&gt;fast, fast-&gt;mid, mid-&gt;slow 
+    </UL>
+    <LI>
+    nbuf = returned size of internal storage buffers used by FFT on this 
+    proc 
+</UL>
+<H4>
+B. Perform a 3d FFT: </H4>
+<PRE>
+void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag,
+            fft_plan_3d *plan) 
+</PRE>
+<UL>
+    <LI>
+    in = starting address of complex input data on this proc 
+    <LI>
+    out = starting address of where complex output data for this proc will 
+    be placed (can be same as in) 
+    <LI>
+    flag = forward or backward FFT 1 = forward FFT -1 = backward FFT 
+    <LI>
+    plan = plan returned by previous call to fft_3d_create_plan 
+</UL>
+<H4>
+C. Destroy a 3d FFT plan: </H4>
+<PRE>
+void fft_3d_destroy_plan(struct fft_plan_3d *plan) 
+</PRE>
+<UL>
+    <LI>
+    plan = plan returned by previous call to fft_3d_create_plan 
+</UL>
+<HR>
+<H3>
+<A NAME="_cch3_931359473">Calling syntax for 2d remaps</A></H3>
+<H4>
+A. Create a plan for performing a 2d remap: </H4>
+<PRE>
+struct remap_plan_2d *remap_2d_create_plan(
+         MPI_Comm comm,
+         int in_ilo, int in_ihi,
+         int in_jlo, int in_jhi,
+         int out_ilo, int out_ihi,
+         int out_jlo, int out_jhi,
+         int nqty, int permute, int memory, int precision) 
+</PRE>
+<UL>
+    <LI>
+    comm = MPI communicator for the group of procs which own the 3d grid 
+    <LI>
+    in_ilo,in_ihi = input bounds of data I own in fast index 
+    <LI>
+    in_jlo,in_jhi = input bounds of data I own in mid index 
+    <LI>
+    out_ilo,out_ihi = output bounds of data I own in fast index 
+    <LI>
+    out_jlo,out_jhi = output bounds of data I own in mid index 
+    <LI>
+    nqty = # of datums per element 
+    <LI>
+    permute = permutation in storage order of fast/mid/slow on output 
+    <UL>
+        <LI>
+        0 = no permutation 
+        <LI>
+        1 = permute once = slow-&gt;fast, fast-&gt;slow 
+    </UL>
+    <LI>
+    memory = how memory will be provided for remap 
+    <UL>
+        <LI>
+        0 = user provides memory via buf argument 
+        <LI>
+        1 = system provides memory stored internal to plan 
+    </UL>
+    <LI>
+    precision = precision of data 
+    <UL>
+        <LI>
+        1 = single precision (4 bytes per datum) 
+        <LI>
+        2 = double precision (8 bytes per datum) 
+    </UL>
+</UL>
+<H4>
+B. Perform a 2d remap: </H4>
+<PRE>
+void remap_2d(double *in, double *out, double *buf,
+              struct remap_plan_2d *plan) 
+</PRE>
+<UL>
+    <LI>
+    in = starting address of input data on this proc 
+    <LI>
+    out = starting address of where output data for this proc will be 
+    placed (can be same as in) 
+    <LI>
+    buf = extra memory required for remap if memory=0 was used in call to 
+    remap_3d_create_plan, then buf must be big enough to hold output 
+    result, namely nqty * (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) if 
+    memory=1 was used in call to remap_3d_create_plan, then buf is not 
+    used, can just be a NULL pointer 
+    <LI>
+    plan = plan returned by previous call to remap_2d_create_plan 
+</UL>
+<H4>
+C. Destroy a 2d remap plan: </H4>
+<PRE>
+void remap_2d_destroy_plan(struct remap_plan_2d *plan) 
+</PRE>
+<UL>
+    <LI>
+    plan = plan returned by previous call to remap_2d_create_plan 
+</UL>
+<HR>
+<H3>
+<A NAME="_cch3_931359478">Calling syntax for 3d remaps</A></H3>
+<H4>
+A. Create a plan for performing a 3d remap: </H4>
+<PRE>
+struct remap_plan_3d *remap_3d_create_plan(
+         MPI_Comm comm,
+         int in_ilo, int in_ihi,
+         int in_jlo, int in_jhi,
+         int in_klo, int in_khi,
+         int out_ilo, int out_ihi,
+         int out_jlo, int out_jhi,
+         int out_klo, int out_khi,
+         int nqty, int permute, int memory, int precision) 
+</PRE>
+<UL>
+    <LI>
+    comm = MPI communicator for the group of procs which own the 3d grid 
+    <LI>
+    in_ilo,in_ihi = input bounds of data I own in fast index 
+    <LI>
+    in_jlo,in_jhi = input bounds of data I own in mid index 
+    <LI>
+    in_klo,in_khi = input bounds of data I own in slow index 
+    <LI>
+    out_ilo,out_ihi = output bounds of data I own in fast index 
+    <LI>
+    out_jlo,out_jhi = output bounds of data I own in mid index 
+    <LI>
+    out_klo,out_khi = output bounds of data I own in slow index 
+    <LI>
+    nqty = # of datums per element 
+    <LI>
+    permute = permutation in storage order of fast/mid/slow on output 
+    <UL>
+        <LI>
+        0 = no permutation 
+        <LI>
+        1 = permute once = mid-&gt;fast, slow-&gt;mid, fast-&gt;slow 
+        <LI>
+        2 = permute twice = slow-&gt;fast, fast-&gt;mid, mid-&gt;slow 
+    </UL>
+    <LI>
+    memory = how memory will be provided for remap 
+    <UL>
+        <LI>
+        0 = user provides memory via buf argument 
+        <LI>
+        1 = system provides memory stored internal to plan 
+    </UL>
+    <LI>
+    precision = precision of data 
+    <UL>
+        <LI>
+        1 = single precision (4 bytes per datum) 
+        <LI>
+        2 = double precision (8 bytes per datum) 
+    </UL>
+</UL>
+<H4>
+B. Perform a 3d remap: </H4>
+<PRE>
+void remap_3d(double *in, double *out, double *buf,
+              struct remap_plan_3d *plan) 
+</PRE>
+<UL>
+    <LI>
+    in = starting address of input data on this proc 
+    <LI>
+    out = starting address of where output data for this proc will be 
+    placed (can be same as in) 
+    <LI>
+    buf = extra memory required for remap if memory=0 was used in call to 
+    remap_3d_create_plan, then buf must be big enough to hold output 
+    result, namely nqty * (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * 
+    (out_khi-out_klo+1) if memory=1 was used in call to 
+    remap_3d_create_plan, then buf is not used, can just be a NULL pointer 
+    <LI>
+    plan = plan returned by previous call to remap_3d_create_plan 
+</UL>
+<H4>
+C. Destroy a 3d remap plan: </H4>
+<PRE>
+void remap_3d_destroy_plan(struct remap_plan_3d *plan) 
+</PRE>
+<UL>
+    <LI>
+    plan = plan returned by previous call to remap_3d_create_plan 
+</UL>
+<HR>
+<H3>
+<A NAME="_cch3_931359483">Optimization</A></H3>
+<P>
+As noted above, you can minimize communication in the FFTs by choosing 
+appropriate input and output data layouts. For 2d and 3d FFTs an 
+optimal input layout is one where each processor owns the entire 
+fast-varying dimension of the data array. For 2d and 3d FFTs an optimal 
+output layout is one where each proc owns the entire slow-varying 
+dimension and permutation is specified as 1 for 2d and as 2 for 3d. 
+Note that these output layouts may not make sense for your application, 
+but you can still reduce communication by choosing the optimal input 
+data layout. </P>
+<HR>
+<H3>
+<A NAME="_cch3_931359489">Calling from Fortran</A></H3>
+<P>
+The FFT and remapping routines can be called from Fortran using the 
+wrapper routines in fft_2d_f.c and remap_2d_f.c and similarly for 3d. 
+There are 2 differences in the calling syntax from Fortran. All the 
+indices run from 1 to N in standard Fortran style, instead of from 0 to 
+N-1. Also, the create_plan routines require an extra final argument, a 
+double precision (8 byte) Fortran variable to store the returned plan. 
+Since this variable stores a pointer to the C data structure for the 
+plan, it cannot be examined directly from the Fortran program to check 
+it for a NULL value. Instead the wrappers print an error message if the 
+create_plan routines failed. </P>
+<HR>
+<H3>
+<A NAME="_cch3_931359494">Precision</A></H3>
+<P>
+The FFT routines can be used in either single or double precision mode 
+be setting #define FFT_PRECISION at the top of fft_2d.h or fft_3d.h. 
+The precision of the remap routines is a calling parameter. </P>
+<HR>
+<H3>
+<A NAME="_cch3_931359499">Other Options</A></H3>
+<P>
+The pack routines have 3 options which can be selected with compiler 
+switches. Setting ARRAY, POINTER, or MEMCPY chooses between the 3 
+different sets of pack/unpack routines - e.g. -DPOINTER. The ARRAY 
+option is the default. These routines are the kernels for parallel data 
+movement since messages sent to other proecssors have to be packed and 
+unpacked into and out of message buffers. On some machines one version 
+of these tends to be faster than the others; on some machines it makes 
+little difference. You can experiment with which works best by toggling 
+the appropriate flag when compilng the pack_2d.c and pack_3d.c 
+routines. </P>
+<HR>
+<H3>
+<A NAME="_cch3_931359505">Acknowledgements</A></H3>
+<P>
+My thanks to <A HREF="http://www.cs.sandia.gov/~bahendr">Bruce
+Hendrickson</A> and Sue Minkoff at Sandia for useful discussions about
+parallel FFT strategies and to the <A
+ HREF="http://www.fftw.org">FFTW</A> authors for the idea of using 
+&quot;plans&quot; as an object-oriented tool for hiding FFT and remap 
+details from the user. </P>
+<P>
+</P>
+</BODY>
+</HTML>
