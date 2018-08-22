@@ -1,0 +1,83 @@
+"fftMPI documentation"_Manual.html
+
+API for FFT constructor and destructor :h3
+
+These methods instantiate an instance of the FFT3d class.
+
+Multiple instances can be instantiated by the calling program,
+e.g. each with its own input/output layout of data.  The MPI
+communicator defines the set of processors which will share the FFT
+data and perform the parallel FFT.
+
+These calls create an instance of the CSlib and later destroy it. 
+
+How to use in serial??
+
+:line
+
+API:
+
+FFT3d(MPI_Comm comm, int precision);     // constructor in parallel
+FFT3d(int precision);                    // constructor in serial
+~FFT3d();                                // destructor :pre
+
+The MPI_Comm argument is an MPI communicator.
+
+:line
+
+C++:
+
+#include "fft3d.h"
+
+MPI_Comm world = MPI_COMM_WORLD;    // MPI communicator 
+int precision = 2;                  // 1 = single, 2 = double
+
+FFT3d *fft = new FFT3d(world,precision);
+delete fft;
+
+does this error if precision does not match
+
+
+:line
+
+C:
+
+#include "fft3d_wrap.h"
+
+MPI_Comm world = MPI_COMM_WORLD;    // MPI communicator 
+int precision = 2;                  // 1 = single, 2 = double
+
+void *fft;
+fft3d_create(world,precision,&fft);
+fft3d_destroy(fft);
+
+:line
+
+Fortran:
+
+include 'mpif.h'
+
+use iso_c_binding
+use fft3d_wrap
+
+integer world,precision
+TYPE(C_ptr) :: fft
+
+world = MPI_COMM_WORLD
+precision = 2
+
+call fft3d_create(world,precision,fft)
+call fft3d_destroy(fft)
+
+:line
+
+Python:
+
+from fftmpi import FFT3dMPI
+from mpi4py import MPI
+
+world = MPI.COMM_WORLD
+precision = 2
+
+fft = FFT3dMPI(world,precision)
+del fft

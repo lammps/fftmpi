@@ -1,0 +1,36 @@
+"fftMPI documentation"_Manual.html
+
+API for FFT tune() :h3
+
+Alternative to setup(), Can I still call setup()?
+
+how to access output from tuning?
+
+:line
+:line
+
+API:
+
+void tune(int nfast, int nmid, int nslow,
+           int in_ilo, int in_ihi, int in_jlo    , 
+           int in_jhi, int in_klo, int in_khi,
+           int out_ilo, int out_ihi, int out_jlo, 
+           int out_jhi, int out_klo, int out_khi,
+           int permute, int &fftsize, int &sendsize, int &recvsize,
+           int flag, int niter, double tmax, int tflag); :pre
+
+:line
+
+C++:
+
+:line
+
+C:
+
+:line
+
+Fortran:
+
+:line
+
+Python:

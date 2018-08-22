@@ -1,0 +1,46 @@
+"fftMPI documentation"_Manual.html
+
+API for FFT compute() :h3
+
+
+This method is called as many times as desired to perform
+forward and inverse FFTs.
+
+Flag is set to 1 for forward FFTs and to -1 for inverse FFTs.  In and
+out are the FFT array data allocated by the caller.  If in = out, an
+in-place FFT is performed.  The size of the pointer should be
+allocated to the fftsize value returned by setup(), even if that is
+larger than the input or output data size.  If in != out, then "in"
+only need be large enough for the initial data owned by the processor,
+but "out" should be allocated to the fftsize value returned by
+setup().
+
+As discussed in the "Data layout"_#data section, in and out are
+effectively pointers to 1d vectors of contiguous memory.  For
+double-precision FFTs, FFT_SCALAR is a typedef to a "double".  For
+single-precision FFTs, FFT_SCALAR is a typedef to a "float".  So the
+caller can pass a double * or float * pointer directly.
+
+:line
+:line
+
+API:
+
+void compute(FFT_SCALAR *in, FFT_SCALAR *out, int flag); :pre
+
+:line
+
+C++:
+
+:line
+
+C:
+
+:line
+
+Fortran:
+
+:line
+
+Python:
+

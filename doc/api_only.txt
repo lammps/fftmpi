@@ -1,0 +1,33 @@
+"fftMPI documentation"_Manual.html
+
+API for FFT only_1d_ffts(), only_remaps(), only_one_remap() :h3
+
+These methods are generally only useful for performance testing or
+debugging.  They perform low-level operations within the FFT.  See the
+test3d.cpp and its timing() method for examples of how they can be
+used.  NOTE: provide some more documentation here??
+
+:line
+:line
+
+API:
+
+void only_1d_ffts(FFT_SCALAR *in, int flag);
+void only_remaps(FFT_SCALAR *in, FFT_SCALAR *out, int flag);
+void only_one_remap(FFT_SCALAR *in, FFT_SCALAR *out, int flag, int which); :pre
+
+:line
+
+C++:
+
+:line
+
+C:
+
+:line
+
+Fortran:
+
+:line
+
+Python:

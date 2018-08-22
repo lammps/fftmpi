@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
 <TITLE>fftMPI Users Manual</TITLE>
-<META NAME="docnumber" CONTENT="6 Mar 2018 version">
+<META NAME="docnumber" CONTENT="10 Sep 2018 version">
 <META NAME="author" CONTENT="http://fftmpi.sandia.gov - Sandia National Laboratories">
 <META NAME="copyright" CONTENT="Copyright (2018) Sandia Corporation.  This software and manual is distributed under the GNU Lesser General Public License.">
 </HEAD>
@@ -12,12 +12,12 @@
 
 <CENTER><H2>Manual for the fftMPI library 
 </H2></CENTER>
-<P>6 Mar 2018 version
-</P>
-<P>The Parallel FFT library is designed to perform 2d and 3d
-complex-to-complex Fast Fourier Transforms (FFTs) efficiently on
-distributed-memory parallel computers using the message passing
-interface (MPI) library.
+<CENTER><H4>10 Sep 2018 version 
+</H4></CENTER>
+<P>The fftMPI library is designed to perform 2d or 3d complex-to-complex
+Fast Fourier Transforms (FFTs) efficiently on distributed-memory
+parallel machines using the message passing interface (MPI) library to
+move data bewteen processors.
 </P>
 <HR>
 
@@ -31,13 +31,37 @@ interface (MPI) library.
 
 <LI><A HREF = "layout.html">Data layout</A> 
 
-<LI><A HREF = "#usage.html">Using the library from your program</A> 
+<LI><A HREF = "usage.html">Using the library from your program</A> 
 
-<UL><LI><A HREF = "syntax_c++.html">Syntax for calling the library from C++</A> 
+<UL><LI><A HREF = "api.html">API overview</A> 
 
-<LI><A HREF = "syntax_c.html">Syntax for calling the library from C</A> 
+<LI><A HREF = "api_create.html">API for FFT constructor and destructor</A> 
 
-<LI><A HREF = "syntax_fortran.html">Syntax for calling the library from Fortran</A> 
+<LI><A HREF = "api_set.html">API for FFT set()</A> 
+
+<LI><A HREF = "api_setup.html">API for FFT setup()</A> 
+
+<LI><A HREF = "api_setup.html">API for FFT setup_memory()</A> 
+
+<LI><A HREF = "api_compute.html">API for FFT compute()</A> 
+
+<LI><A HREF = "api_only.html">API for FFT only_1d_ffts()</A> 
+
+<LI><A HREF = "api_only.html">API for FFT only_remaps()</A> 
+
+<LI><A HREF = "api_only.html">API for FFT only_one_remap()</A> 
+
+<LI><A HREF = "api_tune.html">API for FFT tune()</A> 
+
+<LI><A HREF = "api_get.html">API for FFT get()</A> 
+</UL>
+<UL><LI><A HREF = "api_remap_create.html">API for Remap constructor and destructor</A> 
+
+<LI><A HREF = "api_remap_set.html">API for Remap set()</A> 
+
+<LI><A HREF = "api_remap_setup.html">API for Remap setup()</A> 
+
+<LI><A HREF = "api_remap_remap.html">API for Remap remap()</A> 
 </UL>
 <LI><A HREF = "optimize.html">Optimization</A> 
 </UL>
@@ -46,9 +70,9 @@ interface (MPI) library.
 <P>The fftMPI library was developed by Steve Plimpton at Sandia National
 Laboratories with help from several collaborators, listed below.
 Sandia is a US Department of Energy facility, with funding from the
-DOE through its Exascale Computing Program (ECP).  It is an
-open-source code, distributed freely under the terms of the Lesser GNU
-Public License (LGPL).  See the LICENSE file in the distribution.
+DOE through its Exascale Computing Program (ECP).  The fftMPI library
+is an open-source code, distributed freely under the terms of the
+(BSD).  See the LICENSE file in the distribution.
 </P>
 <P>Additional collaborators:
 </P>

@@ -2,18 +2,19 @@
 
 Compiling the test programs :h3
 
-The test directory has several programs that illustrate how to use the
-Parallel FFT library and can also be used to benchmark its
-performance.  These files invoke 3d FFTs.
+The test directory has several programs that illustrate how to use
+fftMPI.  They can also be used to benchmark its performance.  These
+files invoke 3d FFTs.
 
-test3d.cpp : use the library as a C++ class
-test3d_c.c : use the library thru its C interface
-test3d_f90.f90 : use the library thru its Fortran interface :ul
+test3d.cpp : use fftMPI as a C++ class
+test3d_c.c : use fftMPI thru its C interface
+test3d_f90.f90 : use fftMPI thru its Fortran interface 
+test3d.py : use fftMPI thru its Python interface :ul
 
 And likewise for the test2d* files which invoke 2d FFTs.
 
 You can build all the test programs from the test directory, by
-simply typing
+typing:
 
 make :pre
 
