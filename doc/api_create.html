@@ -1,0 +1,85 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>API for FFT constructor and destructor 
+</H3>
+<P>These methods instantiate an instance of the FFT3d class.
+</P>
+<P>Multiple instances can be instantiated by the calling program,
+e.g. each with its own input/output layout of data.  The MPI
+communicator defines the set of processors which will share the FFT
+data and perform the parallel FFT.
+</P>
+<P>These calls create an instance of the CSlib and later destroy it. 
+</P>
+<P>How to use in serial??
+</P>
+<HR>
+
+<P>API:
+</P>
+<PRE>FFT3d(MPI_Comm comm, int precision);     // constructor in parallel
+FFT3d(int precision);                    // constructor in serial
+~FFT3d();                                // destructor 
+</PRE>
+<P>The MPI_Comm argument is an MPI communicator.
+</P>
+<HR>
+
+<P>C++:
+</P>
+<P>#include "fft3d.h"
+</P>
+<P>MPI_Comm world = MPI_COMM_WORLD;    // MPI communicator 
+int precision = 2;                  // 1 = single, 2 = double
+</P>
+<P>FFT3d *fft = new FFT3d(world,precision);
+delete fft;
+</P>
+<P>does this error if precision does not match
+</P>
+<HR>
+
+<P>C:
+</P>
+<P>#include "fft3d_wrap.h"
+</P>
+<P>MPI_Comm world = MPI_COMM_WORLD;    // MPI communicator 
+int precision = 2;                  // 1 = single, 2 = double
+</P>
+<P>void *fft;
+fft3d_create(world,precision,&fft);
+fft3d_destroy(fft);
+</P>
+<HR>
+
+<P>Fortran:
+</P>
+<P>include 'mpif.h'
+</P>
+<P>use iso_c_binding
+use fft3d_wrap
+</P>
+<P>integer world,precision
+TYPE(C_ptr) :: fft
+</P>
+<P>world = MPI_COMM_WORLD
+precision = 2
+</P>
+<P>call fft3d_create(world,precision,fft)
+call fft3d_destroy(fft)
+</P>
+<HR>
+
+<P>Python:
+</P>
+<P>from fftmpi import FFT3dMPI
+from mpi4py import MPI
+</P>
+<P>world = MPI.COMM_WORLD
+precision = 2
+</P>
+<P>fft = FFT3dMPI(world,precision)
+del fft
+</P>
+</HTML>

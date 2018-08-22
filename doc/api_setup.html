@@ -1,0 +1,134 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>API for FFT setup() and setup_memory() 
+</H3>
+<P>This call is a one-time setup an FFT for either 3d or 2d.  Only the
+3d case is illustrated below for each language; the 2d analog should
+be clear.
+</P>
+<P>These methods are called one time to setup the FFT.  The first setup()
+is for 3d FFTs, the second setup() is for 2d FFTs.
+</P>
+<P>Cannot call setup() again, just destruct and start over.
+</P>
+<P>Nfast, nmid, nslow are the dimensions of the global FFT grid.  As
+described in the <A HREF = "#data">Data layout</A> section, they refer to how the
+data is stored contigously by each processor, as the fast-varyind,
+mid-varying, slow-varying dimension.  This is independent of the x,y,z
+spatial dimensions of the physical problem.
+</P>
+<P>The in/out ijk lo/hi indices are the extent of the subsection of the
+global grid that this processor owns.  Each index can be from 0 to
+N-1, where N is the global grid dimension.  Again, i,j,k correspond to
+fast,mid,slow, not to x,y,z.
+</P>
+<P>Permute requests a permutation in storage order of fast/mid/slow on
+output.  A vakue of 0 = no permutation.  A value of 1 = permute once =
+mid->fast, slow->mid, fast->slow.  A value of 2 = permute twice =
+slow->fast, fast->mid, mid->slow.
+</P>
+<P>Three value are retured by setup().  Fftsize is the max number of FFT
+grid points the processor will own at any stage of the FFT (start,
+intermediate, end).  Thus it is the size of the FFT array it must
+allocate.  The returned value N is the # of complex datums the
+processor owns.  Thus the allocation should be 2*N doubles for
+double-precision FFTs, and 2*N floats for single-precision FFTs.
+</P>
+<P>Sendsize and recvsize are the size of buffers needed to perform the
+MPI sends and receives for the data remapping operations.  If the
+internal memoryflag value is set to 1 (the default, see description
+below), the FFT library will allocate these buffers.  So the returned
+values can be ignored.  If the internal memoryflag value is set to 0
+by the caller, the caller must allocate the memory and pass it to the
+FFT library via the setup_memory() method.  This must be done before
+any FFT is computed.  The returned sendsize and recvsize values are
+NOT a count of complex values, but are the # of doubles or floats that
+the two buffers must be allocated for (double- or single-precision
+FFTs).
+</P>
+<HR>
+
+<HR>
+
+<P>API:
+</P>
+<PRE>void setup(int nfast, int nmid, int nslow,
+           int in_ilo, int in_ihi, int in_jlo    , 
+           int in_jhi, int in_klo, int in_khi,
+           int out_ilo, int out_ihi, int out_jlo, 
+           int out_jhi, int out_klo, int out_khi,
+           int permute, int &fftsize, int &sendsize, int &recvsize);  // 3d FFT 
+</PRE>
+<PRE>void setup(int nfast, int nslow,
+           int in_ilo, int in_ihi, int in_jlo, int in_jhi,
+           int out_ilo, int out_ihi, int out_jlo, int out_jhi,
+           int permute, int &fftsize, int &sendsize, int &recvsize);  // 2d FFT 
+</PRE>
+<P>void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
+</P>
+<P>input and output values
+</P>
+<HR>
+
+<P>C++:
+</P>
+<P>int nx,ny,nz;
+int inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
+int outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
+int permute,fftsize,sendsize,recvsize;
+</P>
+<P>permute = 0;
+fft->setup(nx,ny,nz,
+           inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
+           outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
+           permute,fftsize,sendsize,recvsize);
+</P>
+<P>void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
+</P>
+<HR>
+
+<P>C:
+</P>
+<P>int nx,ny,nz;
+int inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
+int outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
+int permute,fftsize,sendsize,recvsize;
+</P>
+<P>permute = 0;
+fft3d_setup(fft,nx,ny,nz,
+            inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
+            outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
+            permute,&fftsize,&sendsize,&recvsize);
+</P>
+<P>void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
+</P>
+<HR>
+
+<P>Fortran:
+</P>
+<P>type(C_ptr) :: fft
+integer nx,ny,nz;
+integer inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
+integer outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
+integer permute,fftsize,sendsize,recvsize;
+</P>
+<PRE>permute = 0
+call fft3d_setup(fft,nx,ny,nz, &
+    inxlo,inxhi,inylo,inyhi,inzlo,inzhi, &
+    outxlo,outxhi,outylo,outyhi,outzlo,outzhi, &
+    permute,fftsize,sendsize,recvsize) 
+</PRE>
+<P>void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
+</P>
+<HR>
+
+<P>Python:
+</P>
+<P>permute = 0
+fftsize,sendsize,recvsize =    fft.setup(nx,ny,nz,inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
+             outxlo,outxhi,outylo,outyhi,outzlo,outzhi,permute)
+</P>
+<P>void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
+</P>
+</HTML>
