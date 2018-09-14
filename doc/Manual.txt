@@ -39,10 +39,8 @@ library to move data bewteen processors.
 "API for FFT setup"_api_setup.html :l
 "API for FFT tune"_api_tune.html :l
 "API for FFT compute"_api_compute.html :l
-"API for FFT stats"_api_stats.html :l,ule
-"API for Remap constructor/destructor"_api_remap_create.html :ulb,l
-"API for Remap setup"_api_remap_setup.html :l
-"API for Remap remap()"_api_remap_remap.html :l,ule
+"API for FFT stats"_api_stats.html :l
+"API for Remap"_api_remap.html :l,ule
 
 :ule
 
