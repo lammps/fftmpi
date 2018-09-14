@@ -1,6 +1,55 @@
 "fftMPI documentation"_Manual.html
 
-API for FFT setup() and setup_memory() :h3
+API for FFT setup :h3
+
+In addition, both the FFT3d and FFT2d classes have 6 public variables
+which can be set directly to enable various FFT options.  Assume an
+instance of the FFT3d (or FFT2d) class is named "fft"; the
+settings can be performed in this manner:
+
+
+The first 4 settings must be change before the setup() call.
+The last 2 settings can be changed anytime before a compute() call.
+
+The first 4 settings must be made after the class is instantiated, but
+before the setup() method is called.  The last 2 settings can be used
+after setup(), but before the compute() method.
+
+For the first 3 settings, the possible numeric values correspond to
+the character strings shown for the -c, -e, -p switch options
+explained above for the test program arguments.  E.g. collective = 0
+is the same as -c point, collective = 1 is the same as -c all, and
+collective = 2 is the same as -c combo.
+
+If memoryflag = 1 is set, then the caller must allocate a sendbuf and
+recvbuf and pass them to the library via a setup_memory() call before
+the compute() method is invoked.  The required length of these buffers
+is returned by the setup() method as sendsize and recvsize.
+
+If scaled = 1 is set, then a forward FFT followed by an inverse FFT
+will return values equal to the initial FFT grid values.  If scaled =
+0 is set, then each final value will be a factor of N larger than the
+
+:line
+
+API:
+
+fft->collective = 0/1/2 (default = 2), -c point/all/combo
+fft->exchange = 0/1 (default = 0), -e pencil/brick
+fft->packflag = 0/1/2 (default = 0), -p array/ptr/memcpy
+fft->memoryflag = 0/1 (default = 1)
+fft->scaled = 0/1 (default = 1)
+fft->remaponly = 0/1 (default = 0) :pre
+
+void setup(int user_nfast, int user_nmid, int user_nslow,
+                  int user_in_ilo, int user_in_ihi, int user_in_jlo, 
+                  int user_in_jhi, int user_in_klo, int user_in_khi,
+                  int user_out_ilo, int user_out_ihi, int user_out_jlo, 
+                  int user_out_jhi, int user_out_klo, int user_out_khi,
+                  int user_permute,
+                  int &user_fftsize, int &user_sendsize, int &user_recvsize) :pre
+
+void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf) :pre
 
 This call is a one-time setup an FFT for either 3d or 2d.  Only the
 3d case is illustrated below for each language; the 2d analog should
@@ -47,30 +96,18 @@ the two buffers must be allocated for (double- or single-precision
 FFTs).
 
 :line
-:line
-
-API:
-
-void setup(int nfast, int nmid, int nslow,
-           int in_ilo, int in_ihi, int in_jlo    , 
-           int in_jhi, int in_klo, int in_khi,
-           int out_ilo, int out_ihi, int out_jlo, 
-           int out_jhi, int out_klo, int out_khi,
-           int permute, int &fftsize, int &sendsize, int &recvsize);  // 3d FFT :pre
-
-void setup(int nfast, int nslow,
-           int in_ilo, int in_ihi, int in_jlo, int in_jhi,
-           int out_ilo, int out_ihi, int out_jlo, int out_jhi,
-           int permute, int &fftsize, int &sendsize, int &recvsize);  // 2d FFT :pre
-
-
-void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
-
-input and output values
-
-:line
 
 C++:
+
+int cflag,eflag,pflag,mflag,sflag,rflag;
+
+fft->collective = cflag;
+fft->exchange = eflag;
+fft->packflag = pflag;
+fft->memoryflag = mflag;
+
+fft->scaled = sflag;
+fft->remaponly = rflag;
 
 int nx,ny,nz;
 int inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
@@ -89,6 +126,16 @@ void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
 
 C:
 
+int cflag,eflag,pflag,mflag,sflag,rflag;
+
+fft3d_set(fft,"collective",cflag);
+fft3d_set(fft,"exchange",eflag);
+fft3d_set(fft,"pack",pflag);
+fft3d_set(fft,"memory",mflag);
+
+fft3d_set(fft,"scale",sflag);
+fft3d_set(fft,"remaponly",rflag);
+
 int nx,ny,nz;
 int inxlo,inxhi,inylo,inyhi,inzlo,inzhi,
 int outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
@@ -105,6 +152,16 @@ void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
 :line
 
 Fortran:
+
+integer cflag,eflag,pflag,mflag,sflag,rflag
+
+call fft3d_set(fft,"collective",cflag)
+call fft3d_set(fft,"exchange",eflag)
+call fft3d_set(fft,"pack",pflag)
+call fft3d_set(fft,"memory",mflag)
+
+call fft3d_set(fft,"scale",sflag)
+call fft3d_set(fft,"remaponly",rflag)
 
 type(C_ptr) :: fft
 integer nx,ny,nz;
@@ -123,6 +180,17 @@ void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
 :line
 
 Python:
+
+cflag = 1
+pflag = 0
+
+fft.set("collective",cflag)
+fft.set("exchange",eflag)
+fft.set("pack",pflag)
+fft.set("memory",mflag)
+
+fft.set("scale",rflag)
+fft.set("remaponly",rflag)
 
 permute = 0
 fftsize,sendsize,recvsize = \
