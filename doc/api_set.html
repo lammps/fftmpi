@@ -1,20 +1,13 @@
 <HTML>
 <P><A HREF = "Manual.html">fftMPI documentation</A>
 </P>
-<H3>API for FFT set() 
+<H3>API for FFT setup 
 </H3>
 <P>In addition, both the FFT3d and FFT2d classes have 6 public variables
 which can be set directly to enable various FFT options.  Assume an
 instance of the FFT3d (or FFT2d) class is named "fft"; the
 settings can be performed in this manner:
 </P>
-<PRE>fft->collective = 0/1/2 (default = 2), -c point/all/combo
-fft->exchange = 0/1 (default = 0), -e pencil/brick
-fft->packflag = 0/1/2 (default = 0), -p array/ptr/memcpy
-fft->memoryflag = 0/1 (default = 1)
-fft->scaled = 0/1 (default = 1)
-fft->remaponly = 0/1 (default = 0) 
-</PRE>
 <P>The first 4 settings must be change before the setup() call.
 The last 2 settings can be changed anytime before a compute() call.
 </P>
@@ -39,10 +32,25 @@ will return values equal to the initial FFT grid values.  If scaled =
 </P>
 <HR>
 
-<HR>
-
 <P>API:
 </P>
+<PRE>fft->collective = 0/1/2 (default = 2), -c point/all/combo
+fft->exchange = 0/1 (default = 0), -e pencil/brick
+fft->packflag = 0/1/2 (default = 0), -p array/ptr/memcpy
+fft->memoryflag = 0/1 (default = 1)
+fft->scaled = 0/1 (default = 1)
+fft->remaponly = 0/1 (default = 0) 
+</PRE>
+<PRE>void setup(int user_nfast, int user_nmid, int user_nslow,
+                  int user_in_ilo, int user_in_ihi, int user_in_jlo, 
+                  int user_in_jhi, int user_in_klo, int user_in_khi,
+                  int user_out_ilo, int user_out_ihi, int user_out_jlo, 
+                  int user_out_jhi, int user_out_klo, int user_out_khi,
+                  int user_permute,
+                  int &user_fftsize, int &user_sendsize, int &user_recvsize) 
+</PRE>
+<PRE>void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf) 
+</PRE>
 <HR>
 
 <P>C++:

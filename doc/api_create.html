@@ -3,26 +3,30 @@
 </P>
 <H3>API for FFT constructor and destructor 
 </H3>
-<P>These methods instantiate an instance of the FFT3d class.
+<P>These methods create and destroy an instance of the FFT3d or FFT2d
+class.  The code examples are for 3d FFTs.  Just replace "3d" by "2d"
+for 2d FFTs.
 </P>
-<P>Multiple instances can be instantiated by the calling program,
-e.g. each with its own input/output layout of data.  The MPI
-communicator defines the set of processors which will share the FFT
-data and perform the parallel FFT.
-</P>
-<P>These calls create an instance of the CSlib and later destroy it. 
-</P>
-<P>How to use in serial??
+<P>Multiple instances can be instantiated by the calling program, e.g. if
+you need to define FFTs wtih different input or output distributions
+of data across processors.  The MPI communicator argument for the
+constructor defines the set of processors which share the FFT data and
+perform the parallel FFT.
 </P>
 <HR>
 
 <P>API:
 </P>
-<PRE>FFT3d(MPI_Comm comm, int precision);     // constructor in parallel
-FFT3d(int precision);                    // constructor in serial
-~FFT3d();                                // destructor 
+<PRE>FFT3d(MPI_Comm comm, int precision);     // constructor
+~FFT3d();                                                     // destructor 
 </PRE>
-<P>The MPI_Comm argument is an MPI communicator.
+<P>The comm argument is an MPI communicator.  The precision argument is 1
+for single-precision (two 32-bit floating point numbers = 1 complex
+datum), and 2 for double-precision (two 64-bit floating point numbers
+= 1 complex datum).  The precision is checked by the fftMPI library to
+insure it was compiled with a matching precision.  See the
+<A HREF = "compile.html">compile</A> doc page for how to compile fftMPI for single
+versus double precision.
 </P>
 <HR>
 
@@ -30,13 +34,11 @@ FFT3d(int precision);                    // constructor in serial
 </P>
 <P>#include "fft3d.h"
 </P>
-<P>MPI_Comm world = MPI_COMM_WORLD;    // MPI communicator 
-int precision = 2;                  // 1 = single, 2 = double
+<P>MPI_Comm world = MPI_COMM_WORLD;
+int precision = 2;
 </P>
 <P>FFT3d *fft = new FFT3d(world,precision);
 delete fft;
-</P>
-<P>does this error if precision does not match
 </P>
 <HR>
 
@@ -44,8 +46,8 @@ delete fft;
 </P>
 <P>#include "fft3d_wrap.h"
 </P>
-<P>MPI_Comm world = MPI_COMM_WORLD;    // MPI communicator 
-int precision = 2;                  // 1 = single, 2 = double
+<P>MPI_Comm world = MPI_COMM_WORLD;
+int precision = 2;
 </P>
 <P>void *fft;
 fft3d_create(world,precision,&fft);

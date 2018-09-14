@@ -6,17 +6,7 @@ The fftMPI library computes multi-dimensional FFTs in parallel where
 the FFT grid is distributed across processors.  Features and
 limitations of the library are as follows:
 
-2d or 3d FFTs
-complex-to-complex FFTs
-single or double precision
-1d FFTs are computed by another library (FFTW, Intel MKL, or KISS)
-allowed grid size in each dimension = any product of 2,3,5 prime factors
-grid decomposition = arbitrary tiling across MPI tasks (explained below)
-initial/final decompositions of grid can be different (useful for convolutions)
-auto-tuning option for a few parameters which can affect performance
-callable from C++ or any language through a C-style interface (e.g. C, Fortran, Python)
-can invoke just the data movement/reordering methods, without FFTs
-test programs and interface files included for all 4 of these languages :ul
+repeat from web page
 
 In the fftMPI context, a "tiling" of the 2d or 3d grid is a
 decomposition of the N1xN2 or N1xN2xN3 grid into P tiles, where P is
@@ -29,11 +19,11 @@ A 2d FFT is performed as a set of 1d FFTs in the x dimension, followed
 by 1d FFTs in y.  A 3d FFT is the same, with a final stage of 1d FFTs
 in z.  As noted above, the 1d FFTs are not computed by fftMPI, but
 rather by calls on each processor to a library that computes optimized
-1d FFTs.  What ftMPI does is the parallel communication necessary to
-move data between processors and re-order on each processor, so as to
-enable the global set of 1d FFTs to be distributed across processors
-successively for each dimension, where the data for each 1d FFT is
-stored contiguously by a single processor.
+1d FFTs.  What fftMPI encodes is the parallel communication necessary
+to move data between processors and re-order on each processor, so as
+to enable the global set of 1d FFTs to be distributed across
+processors successively for each dimension, where the data for each 1d
+FFT is stored contiguously by a single processor.
 
 The fftMPI library can be used to only communicate and rearrange the
 data in a 2d or 3d grid in parallel, without performing 1d FFTs.  This

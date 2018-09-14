@@ -1,18 +1,12 @@
 "fftMPI documentation"_Manual.html
 
-API for FFT set() :h3
+API for FFT setup :h3
 
 In addition, both the FFT3d and FFT2d classes have 6 public variables
 which can be set directly to enable various FFT options.  Assume an
 instance of the FFT3d (or FFT2d) class is named "fft"; the
 settings can be performed in this manner:
 
-fft->collective = 0/1/2 (default = 2), -c point/all/combo
-fft->exchange = 0/1 (default = 0), -e pencil/brick
-fft->packflag = 0/1/2 (default = 0), -p array/ptr/memcpy
-fft->memoryflag = 0/1 (default = 1)
-fft->scaled = 0/1 (default = 1)
-fft->remaponly = 0/1 (default = 0) :pre
 
 The first 4 settings must be change before the setup() call.
 The last 2 settings can be changed anytime before a compute() call.
@@ -36,11 +30,26 @@ If scaled = 1 is set, then a forward FFT followed by an inverse FFT
 will return values equal to the initial FFT grid values.  If scaled =
 0 is set, then each final value will be a factor of N larger than the
 
-
-:line
 :line
 
 API:
+
+fft->collective = 0/1/2 (default = 2), -c point/all/combo
+fft->exchange = 0/1 (default = 0), -e pencil/brick
+fft->packflag = 0/1/2 (default = 0), -p array/ptr/memcpy
+fft->memoryflag = 0/1 (default = 1)
+fft->scaled = 0/1 (default = 1)
+fft->remaponly = 0/1 (default = 0) :pre
+
+void setup(int user_nfast, int user_nmid, int user_nslow,
+                  int user_in_ilo, int user_in_ihi, int user_in_jlo, 
+                  int user_in_jhi, int user_in_klo, int user_in_khi,
+                  int user_out_ilo, int user_out_ihi, int user_out_jlo, 
+                  int user_out_jhi, int user_out_klo, int user_out_khi,
+                  int user_permute,
+                  int &user_fftsize, int &user_sendsize, int &user_recvsize) :pre
+
+void setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf) :pre
 
 :line
 

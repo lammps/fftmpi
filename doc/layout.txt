@@ -2,6 +2,22 @@
 
 Data layout :h3
 
+Caller owns FFT grid data.
+
+How complex values are stored.
+
+Data for FFT grid is owned by caller, must be contiguous as explained
+"here".
+
+
+Each array element that is input/output to/from the FFT methods is a
+complex value.  For double-precision FFTs, a complex value must be
+stored as two contiguous 64-bit doubles (real and imaginary).  For
+single-precision FFTs it is two contiguous 32-bit floats.  Thus for
+double-precision FFTs, if a processor owns 1024 values in its
+subsection of a 2d or 3d array, it would allocate space for 2048
+contiguous doubles to store its values.
+
 Before giving details on how to use the library, we discuss data
 layout across processors and within a processor's memory.  Consider 2d
 and 3d arrays which are input to and output by 2d and 3d FFT and remap
@@ -32,13 +48,6 @@ are not allowed as arguments, unless they store the underlying 2d or
 3d data contiguous in memory.  In which case, the address of the
 underlying data is passed, not the top-level pointer.
 
-Each array element that is input/output to/from the FFT methods is a
-complex value.  For double-precision FFTs, a complex value must be
-stored as two contiguous 64-bit doubles (real and imaginary).  For
-single-precision FFTs it is two contiguous 32-bit floats.  Thus for
-double-precision FFTs, if a processor owns 1024 values in its
-subsection of a 2d or 3d array, it would allocate space for 2048
-contiguous doubles to store its values.
 
 The FFT and remap routines allow the option of permuting the order of
 the fast, mid, and slow indices on output. For example, in a 2d FFT, a
@@ -83,3 +92,24 @@ data layouts, they work fastest with layouts directly usable by the
 parallel FFTs, without additional remappings being necessary. This is
 discussed in the optimization section.
 
+
+Optimization :h3
+
+As noted above, communication cost in the FFTs can be minimized by
+choosing appropriate input and output data layouts.  For both 2d and
+3d FFTs an optimal input layout is one where each processor already
+owns the entire fast-varying dimension of the data array and each
+processor has (roughly) the same amount of data.  In this case, no
+initial remapping of data is required; the first set of 1d FFTs can be
+performed immediately.
+
+Similarly, an optimal output layout is one where each proc owns the
+entire slow-varying dimension and again (roughly) the same amount of
+data.  Additionally it is one where the permutation is specified as 1
+for 2d and as 2 for 3d.  In this case, no final remapping of data is
+required; the data is simple left in the layout used for the final set
+of 1d FFTs.
+
+Note that these input and output layouts may or may not make sense for
+a specific application.  But using either or both of them will reduce
+the cost of the FFT operation.

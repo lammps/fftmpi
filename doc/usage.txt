@@ -57,3 +57,8 @@ Insure the pointer returned from fft3d_create() is stored in an 8-byte
 variable (integer or floating point) by the program. This pointer is
 passed in all subsequent calls to the library. :ulb,l,ule
 
+
+
+A calling program can instantiate any of the classes, as many times as
+it wishes.
+
