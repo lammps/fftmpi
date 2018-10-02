@@ -19,7 +19,7 @@ integer nx,ny
 integer inpx,inpy,outpx,outpy
 integer nloop
 INTEGER mode,iflag,cflag,eflag,pflag,tflag,rflag,oflag,vflag
-integer seed
+INTEGER seed,seedinit
 
 integer precision
 integer inxlo,inxhi,inylo,inyhi       ! initial partition of grid
@@ -32,22 +32,27 @@ integer tuneflag,tuneper,tuneextra
 REAL*8  tunemax
 
 TYPE(C_ptr) :: fft
-REAL*8 :: time2d,timeinit
+real(8) ::  timefft,timeinit,timesetup,timetune
+real(8) :: epsmax
 
-integer :: zero = 0
-integer :: step = 1
-integer :: index = 2
-integer :: randominit = 3
-integer :: point = 0
-integer :: all2all = 1
-integer :: combo = 2
-integer :: pencil = 0
-integer :: brick = 1
-integer :: array = 0
-integer :: pointer = 1
-integer :: memcpy = 2
-integer :: in = 0
-integer :: out = 1
+integer :: ZERO = 0
+integer :: STEP = 1
+integer :: INDEX = 2
+integer :: RANDOMINIT = 3
+
+integer :: POINT = 0
+integer :: ALL2ALL = 1
+integer :: COMBO = 2
+
+integer :: PENCIL = 0
+integer :: BRICK = 1
+
+integer :: ARRAY = 0
+integer :: POINTER = 1
+integer :: MEMCPY = 2
+
+integer :: IN = 0
+integer :: OUT = 1
 
 integer :: IA = 16807
 integer :: IM = 2147483647
@@ -60,6 +65,13 @@ REAL(4), ALLOCATABLE, target :: work(:)
 #else
 REAL(8), ALLOCATABLE, target :: work(:)
 #endif
+
+character (len=256) :: syntax
+ 
+!syntax = "Syntax: test2d_f90 -g Nx Nx -p Px Py -n Nloop -m 0/1/2/3" // &
+!        "         -i zero/step/82783 -m 0/1/2/3 -tune nper tmax extra" // &
+!        "         -c point/all/combo -e pencil/brick -p array/ptr/memcpy" // &
+!        "         -t -r -o -v"
 
 end module data
 
@@ -110,7 +122,7 @@ call proc_setup(0)
 call proc_setup(1)
 call grid_setup()
 call plan()
-ALLOCATE(work(2*fftsize))
+call allocate_mine()
 call initialize()
 
 call MPI_Barrier(world,ierr)
@@ -126,7 +138,7 @@ time1 = MPI_Wtime()
 
 if (mode < 2) then
   do i = 1,nloop
-    call fft2d_compute(fft,c_loc(work),c_loc(work),1)
+     call fft2d_compute(fft,c_loc(work),c_loc(work),1)
 !    if (oflag /= 0) call output(1,"Middle grid");
     call fft2d_compute(fft,c_loc(work),c_loc(work),-1)
   enddo
@@ -138,7 +150,7 @@ endif
 
 call MPI_Barrier(world,ierr)
 time2 = mpi_wtime()
-time2d = time2 - time1
+timefft = time2 - time1
 
 ! validation check on result
 ! grid output
@@ -155,7 +167,7 @@ IF (oflag /= 0) THEN
 endif
 
 call timing()
-deallocate(work)
+call deallocate_mine()
 call fft2d_destroy(fft);
 
 call MPI_Finalize(ierr)
@@ -172,9 +184,6 @@ use data
 implicit none
 INTEGER iarg,narg
 character (len=64) :: arg
-character (len=128) :: syntax
-
-syntax = "Syntax: test2d_f90 -g Nx Ny -n Niter"
 
 ! defaults
 
@@ -213,92 +222,101 @@ do while (iarg <= narg)
     read (arg,'(i10)') ny
     iarg = iarg + 3
   ELSE IF (arg == "-pin") then
-    IF (iarg+3 > narg) error_all(syntax)
+    IF (iarg+3 > narg) call error_all(syntax)
     call get_command_argument(iarg+1,arg)
     read (arg,'(i10)') inpx
     call get_command_argument(iarg+2,arg)
     read (arg,'(i10)') inpy
-    iarg += 3
-  else if (args == "-pout") then
-    IF (iarg+3 > narg) error_all(syntax)
+    iarg = iarg + 3
+  else if (arg == "-pout") then
+    IF (iarg+3 > narg) call error_all(syntax)
     call get_command_argument(iarg+1,arg)
     read (arg,'(i10)') outpx
     call get_command_argument(iarg+2,arg) 
     read (arg,'(i10)') outpy
-    iarg += 3
+    iarg = iarg + 3
   else if (arg == '-n') then
     IF (iarg+1 > narg) CALL error_all(syntax)
     CALL GET_COMMAND_ARGUMENT(iarg+1,arg)
     READ (arg,'(i10)') nloop
     iarg = iarg + 2
   ELSE IF (arg == "-i") THEN
-    IF (iarg+2 > narg) error_all(syntax)
+    IF (iarg+2 > narg) call error_all(syntax)
     IF (arg == "zero") THEN
-      flag = ZERO
+      iflag = ZERO
     ELSE IF (arg == "step") then
-      flag = STEP
+      iflag = STEP
     ELSE IF (arg == "index") then
-      flag = INDEX
+      iflag = INDEX
     ELSE
-      iflag = RANDOM
+      iflag = RANDOMINIT
       ! per-processor RNG seed
-      seed = seedinit = atoi(args[iarg+1]) + me
+      CALL GET_COMMAND_ARGUMENT(iarg+1,arg)
+      READ (arg,'(i10)') seedinit
+      seed = seedinit + me
     ENDIF
-    iarg += 2
+    iarg = iarg + 2
   ELSE IF (arg == "-tune") THEN
-    IF (iarg+4 > narg) error_all(syntax)
+    IF (iarg+4 > narg) call error_all(syntax)
     tuneflag = 1
-    tuneper = atoi(args[iarg+1])
-    tunemax = atof(args[iarg+2])
-    tuneextra = atoi(args[iarg+3])
-    iarg += 4
+    CALL GET_COMMAND_ARGUMENT(iarg+1,arg)
+    READ (arg,'(i10)') tuneper
+    CALL GET_COMMAND_ARGUMENT(iarg+2,arg)
+    READ (arg,'(f10.3)') tunemax
+    CALL GET_COMMAND_ARGUMENT(iarg+3,arg)
+    READ (arg,'(i10)') tuneextra
+    iarg = iarg + 4
   ELSE IF (arg == "-m") THEN
-    IF (iarg+2 > narg) error_all(syntax)
-    mode = atoi(args[iarg+1])
-    iarg += 2
+    IF (iarg+2 > narg) call error_all(syntax)
+    CALL GET_COMMAND_ARGUMENT(iarg+1,arg)
+    READ (arg,'(i10)') mode
+    iarg = iarg + 2
   ELSE IF (arg == "-c") THEN
-    IF (iarg+2 > narg) error_all(syntax)
+    IF (iarg+2 > narg) call error_all(syntax)
     IF (arg == "point") THEN
-      flag = POINT
+      cflag = POINT
     ELSE IF (arg == "all") then
-      flag = ALL2ALL
+      cflag = ALL2ALL
     ELSE IF (arg == "combo") then
-      flag = COMBO
-    ELSE error_all(syntax)
+      cflag = COMBO
+    ELSE 
+      CALL error_all(syntax)
     ENDIF
-    iarg += 2
+    iarg = iarg + 2
   ELSE IF (arg == "-e") THEN
-    IF (iarg+2 > narg) error_all(syntax)
+    IF (iarg+2 > narg) call error_all(syntax)
     IF (arg == "pencil") then
-      flag = PENCIL
+      eflag = PENCIL
     ELSE IF (arg == "brick") then
-      flag = BRICK
-    ELSE error_all(syntax)
+      eflag = BRICK
+    ELSE 
+      CALL error_all(syntax)
     endif
-    iarg += 2
+    iarg = iarg + 2
   ELSE IF (arg == "-p") THEN
-    IF (iarg+2 > narg) error_all(syntax)
+    IF (iarg+2 > narg) call error_all(syntax)
     IF (arg == "array") THEN
-      flag = ARRAY
+      pflag = ARRAY
     ELSE IF (arg == "ptr") THEN 
-      flag = POINTER
+      pflag = POINTER
     ELSE IF (arg == "memcpy") THEN
-      flag = MEMCPY
-    ELSE error_all(syntax)
+      pflag = MEMCPY
+    ELSE 
+      CALL error_all(syntax)
     ENDIF
-    iarg += 2
+    iarg = iarg + 2
   ELSE IF (arg == "-t") THEN
     tflag = 1
-    iarg += 1
+    iarg = iarg + 1
   ELSE IF (arg == "-r") THEN
     rflag = 1
-    iarg += 1
+    iarg = iarg + 1
   ELSE IF (arg == "-o") THEN
     oflag = 1
-    iarg += 1
+    iarg = iarg + 1
   ELSE IF (arg == "-v") THEN
     vflag = 1
-    iarg += 1
+    iarg = iarg + 1
   else
     call error_all(syntax)
   endif
@@ -307,7 +325,33 @@ enddo
 ! sanity check on args
 
 if (nx <= 0 .or. ny <= 0) call error_all("Invalid grid size")
-if (nloop <= 0) call error_all("Invalid Niter")
+
+IF (inpx == 0 .and. inpy == 0) then
+ELSE IF (inpx <= 0 .or. inpy <= 0) THEN
+  call error_all("Invalid proc grid")
+ELSE IF (inpx*inpy /= nprocs) THEN
+  call error_all("Specified proc grid does not match nprocs")
+endif
+
+IF (outpx == 0 .and. outpy == 0) then
+ELSE IF (outpx <= 0 .or. outpy <= 0) THEN
+  call error_all("Invalid proc grid")
+ELSE IF (outpx*outpy /= nprocs) THEN
+  call error_all("Specified proc grid does not match nprocs")
+endif
+
+IF (nloop < 0) call error_all("Invalid Nloop")
+IF (nloop == 0 .and. tuneflag == 0) call error_all("Invalid Nloop")
+IF (iflag == RANDOMINIT .and. seed <= 0) &
+        CALL error_all("Invalid initialize setting")
+IF (mode < 0 .or. mode > 3) call error_all("Invalid FFT mode")
+IF (mode > 1 .AND. vflag /= 0) CALL error_all("Cannot validate forward only FFT")
+
+IF (tuneflag /= 0 .AND. tuneper <= 0) CALL error_all("Invalid tune nper")
+IF (tuneflag /= 0 .AND. tunemax < 0.0) CALL error_all("Invalid tune tmax")
+IF (tuneflag /= 0 .AND. (tuneextra < 0 .OR. tuneextra > 1)) &
+        call error_all("Invalid tune extra")
+IF (tuneflag /= 0 .AND. rflag /= 0) CALL error_all("Cannot tune with remap only")
 
 end subroutine options
 
@@ -429,18 +473,68 @@ SUBROUTINE plan()
 use data
 use fft2d_wrap
 implicit none
-INTEGER permute
-integer sendsize,recvsize
+INTEGER permute,sendsize,recvsize,flag,ierr
+REAL*8 time1,time2
 
 call fft2d_create(world,precision,fft)
+CALL fft2d_set(fft,"remaponly",rflag)
 
-permute = 0
-call fft2d_setup(fft,nx,ny, &
-    inxlo,inxhi,inylo,inyhi, &
-    outxlo,outxhi,outylo,outyhi, &
-    permute,fftsize,sendsize,recvsize)
+CALL fft2d_set(fft,"collective",cflag)
+CALL fft2d_set(fft,"exchange",eflag)
+CALL fft2d_set(fft,"pack",pflag)
+
+IF (mode == 0 .or. mode == 2) then
+  permute = 0
+ELSE 
+  permute = 2
+endif
+
+call MPI_Barrier(world,ierr)
+time1 = MPI_Wtime()
+
+! will use fftsize to allocate work buffer
+! ignore sendsize, recvsize b/c let FFT allocate remap buffers internally
+! set timesetup and timetune
+! reset nloop if tuning and user nloop = 0
+
+IF (tuneflag == 0) THEN
+  CALL fft2d_setup(fft,nx,ny, &
+          inxlo,inxhi,inylo,inyhi,outxlo,outxhi,outylo,outyhi, &
+          permute,fftsize,sendsize,recvsize)
+else
+  flag = 0
+  IF (mode >= 2) flag = 1
+  CALL fft2d_tune(fft,nx,ny, &
+          inxlo,inxhi,inylo,inyhi,outxlo,outxhi,outylo,outyhi, &
+          permute,fftsize,sendsize,recvsize, &
+          flag,tuneper,tunemax,tuneextra)
+  IF (nloop == 0) nloop = fft2d_get_int(fft,"npertrial")
+endif
+
+call MPI_Barrier(world,ierr)
+time2 = MPI_Wtime()
+
+IF (tuneflag == 0) then
+  timesetup = time2 - time1
+  timetune = 0.0
+else
+  timesetup = fft2d_get_double(fft,"setuptime")
+  timetune = time2 - time1
+endif
 
 end subroutine plan
+
+! ---------------------------------------------------------------------
+! allocate memory for FFT grid
+! ---------------------------------------------------------------------
+
+subroutine allocate_mine()
+use data
+implicit none
+
+ALLOCATE(work(2*fftsize))
+
+end subroutine allocate_mine
 
 ! ---------------------------------------------------------------------
 ! must be called by all procs in world
@@ -454,13 +548,14 @@ integer m
 INTEGER ilocal,jlocal,iglobal,jglobal,nxlocal
 real*8 random
 
-if (iflag == 0) then
+if (iflag == ZERO) then
   DO m = 1,2*nfft_in
     work(m) = 0.0
   enddo
 
 else if (iflag == 1) then
   nxlocal = inxhi - inxlo + 1
+
   DO m = 0,nfft_in-1
     ilocal = MOD(m,nxlocal)
     jlocal = m / nxlocal
@@ -476,6 +571,7 @@ else if (iflag == 1) then
 
 else if (iflag == 2) then
   nxlocal = inxhi - inxlo + 1
+
   DO m = 0,nfft_in-1
     ilocal = MOD(m,nxlocal)
     jlocal = m / nxlocal
@@ -485,7 +581,7 @@ else if (iflag == 2) then
     work(2*m+2) = 0.0
   ENDDO
 
-else if (iflag == 3) then
+ELSE IF (iflag == 3) THEN
   DO m = 1,2*nfft_in
     work(m) = random()
   ENDDO
@@ -493,27 +589,121 @@ endif
 
 end subroutine initialize
 
-! ----------------------------------------------------------------------
+! ---------------------------------------------------------------------
 ! output FFT grid values
 ! flag = 0 for initial partition
 ! flag = 1 for final partition
-! ----------------------------------------------------------------------
+! ---------------------------------------------------------------------
 
-subroutine output(flag, str)
+SUBROUTINE output(flag, str)
 use data
 implicit none
-integer flag
-CHARACTER(*) str
+INTEGER flag
+CHARACTER (len=*) :: str
+INTEGER iproc,m,tmp,ierr
+integer ilocal,jlocal,iglobal,jglobal
+INTEGER nxlocal
+
+IF (me == 0) PRINT *,str
+
+DO iproc = 0,nprocs-1
+  IF (me /= iproc) CONTINUE
+  IF (me >= 1) CALL MPI_Recv(tmp,0,MPI_INT,me-1,0,world,MPI_STATUS_IGNORE,ierr)
+
+  IF (flag == 0) THEN
+    nxlocal = inxhi - inxlo + 1
+    
+    DO m = 0,nfft_in-1
+      ilocal = MOD(m,nxlocal)
+      jlocal = m / nxlocal
+      iglobal = inxlo + ilocal
+      jglobal = inylo + jlocal
+      PRINT *,"Value (",iglobal,jglobal,") on proc",me, &
+              "= (",work(2*m),work(2*m+1),")"
+    ENDDO
+  ELSE
+    nxlocal = outxhi - outxlo + 1;
+
+    DO m = 0,nfft_in-1
+      ilocal = MOD(m,nxlocal)
+      jlocal = m / nxlocal
+      iglobal = outxlo + ilocal
+      jglobal = outylo + jlocal
+      PRINT *,"Value (",iglobal,jglobal,") on proc",me, &
+              "= (",work(2*m),work(2*m+1),")"
+    ENDDO
+  ENDIF
+
+  IF (me < nprocs-1) CALL MPI_Send(tmp,0,MPI_INT,me+1,0,world,ierr);
+ENDDO
 
 end subroutine output
 
-! ----------------------------------------------------------------------
+! ---------------------------------------------------------------------
 ! validation check for correct result
-! ----------------------------------------------------------------------
+! ---------------------------------------------------------------------
 
-subroutine validate()
+SUBROUTINE validate()
 use data
 implicit none
+integer ilocal,jlocal,iglobal,jglobal
+INTEGER nxlocal
+INTEGER m,ierr
+REAL*8 delta,epsilon,VALUE,newvalue
+REAL*8 random
+
+epsilon = 0.0
+
+IF (iflag == ZERO) THEN
+  DO m = 0,2*nfft_in-1
+    delta = abs(work(m))
+    IF (delta > epsilon) epsilon = delta
+  ENDDO
+
+ELSE IF (iflag == STEP) THEN
+  nxlocal = inxhi - inxlo + 1
+
+  DO m = 0,nfft_in-1
+    ilocal = MOD(m,nxlocal)
+    jlocal = m / nxlocal
+    iglobal = inxlo + ilocal
+    jglobal = inylo + jlocal
+    IF (iglobal < nx/2 .AND. jglobal < ny/2) THEN
+      VALUE = 1.0
+    ELSE
+      VALUE = 0.0
+    ENDIF
+    delta = abs(work(2*m)-VALUE)
+    IF (delta > epsilon) epsilon = delta
+    delta = abs(work(2*m+1))
+    IF (delta > epsilon) epsilon = delta
+  ENDDO
+
+ELSE IF (iflag == INDEX) THEN
+  nxlocal = inxhi - inxlo + 1
+
+  DO m = 0,nfft_in-1
+    ilocal = MOD(m,nxlocal)
+    jlocal = m / nxlocal
+    iglobal = inxlo + ilocal
+    jglobal = inylo + jlocal
+    VALUE = jglobal + iglobal + 1
+    delta = abs(work(2*m)-VALUE)
+    IF (delta > epsilon) epsilon = delta
+    delta = abs(work(2*m+1))
+    IF (delta > epsilon) epsilon = delta
+  ENDDO
+
+ELSE IF (iflag == RANDOMINIT) THEN
+  seed = seedinit
+  DO m = 0,2*nfft_in-1
+    newvalue = random()
+    delta = abs(work(m)-newvalue)
+    IF (delta > epsilon) epsilon = delta
+  ENDDO
+ENDIF
+
+CALL MPI_Allreduce(epsilon,epsmax,1,MPI_DOUBLE,MPI_MAX,world,ierr)
 
 end subroutine validate
 
@@ -523,30 +713,269 @@ end subroutine validate
 
 SUBROUTINE timing()
 use data
+use iso_c_binding
+use fft2d_wrap
 implicit none
 integer nfft
 REAL (kind=8) :: onetime,nsize,log2n,floprate
+INTEGER i,nlen,ierr
+REAL*8 time1d,time_remap;
+REAL*8 time_remap1,time_remap2,time_remap3
+REAL*8 time1,time2,time3,time4
+INTEGER*8 gridbytes
+INTEGER ntrial,npertrial
+INTEGER(8), POINTER :: cflags(:) => NULL()
+INTEGER(8), POINTER :: eflags(:) => NULL()
+INTEGER(8), POINTER :: pflags(:) => NULL()
+REAL(8), POINTER :: tfft(:) => NULL()
+REAL(8), POINTER :: t1d(:) => NULL()
+REAL(8), POINTER :: tremap(:) => NULL()
+REAL(8), POINTER :: tremap1(:) => NULL()
+REAL(8), POINTER :: tremap2(:) => NULL()
+REAL(8), POINTER :: tremap3(:) => NULL()
+TYPE(C_ptr) :: ptr
 
-nfft = 2*nloop
-onetime = time2d/nfft
-nsize = 1.0 * nx * ny
-log2n = log(nsize)/log(2.0)
-floprate = 5.0 * nsize * log2n / onetime / (1024*1024*1024)
+! perform only 1d FFTs
 
-if (me == 0) then
-!  printf("2d FFTs with %s library, precision = %s\n",
-!    fft->fft1d,fft->PRECISION)
+IF (tflag /= 0) THEN
+  DO i = 0,2*nfft_in-1
+    work(i) = 0.0
+  ENDDO
 
-  PRINT *,"Grid size:",nx,ny
+  call MPI_Barrier(world,ierr)
+  time1 = MPI_Wtime()
 
-  PRINT *,nloop,"forward and ",nloop,"back FFTs on",nprocs,"procs"
-  PRINT *,"Setup time =",timeinit,"secs"
-  PRINT *,"Time for 2d FFTs =",time2d,"secs"
-  PRINT *,"  time/fft2d =",onetime,"secs"
-  PRINT *,"  flop rate for 2d FFTs =",floprate,"Gflops"
+  IF (mode < 2) THEN
+    DO i = 1,nloop
+      call fft2d_only_1d_ffts(fft,c_loc(work),1)
+      call fft2d_only_1d_ffts(fft,c_loc(work),-1)
+    ENDDO
+  ELSE
+    DO i = 1,nloop
+      call fft2d_only_1d_ffts(fft,c_loc(work),1)
+    ENDDO
+  ENDIF
+
+  call MPI_Barrier(world,ierr)
+  time2 = MPI_Wtime()
+  time1d = time2 - time1
+ENDIF
+
+! perform all remaps
+
+IF (tflag /= 0) THEN
+  DO i = 0,2*nfft_in-1
+    work(i) = 0.0
+  ENDDO
+
+  call MPI_Barrier(world,ierr)
+  time1 = MPI_Wtime()
+
+  IF (mode < 2) THEN
+    DO i = 1,nloop
+      call fft2d_only_remaps(fft,c_loc(work),c_loc(work),1)
+      call fft2d_only_remaps(fft,c_loc(work),c_loc(work),-1)
+    ENDDO
+  ELSE
+    DO i = 1,nloop
+      call fft2d_only_remaps(fft,c_loc(work),c_loc(work),1)
+    ENDDO
+  ENDIF
+
+  call MPI_Barrier(world,ierr)
+  time2 = MPI_Wtime()
+  time_remap = time2 - time1
+ENDIF
+
+! perform only single remaps
+
+IF (tflag /= 0) THEN
+  DO i = 0,2*nfft_in-1
+    work(i) = 0.0
+  ENDDO
+
+  call MPI_Barrier(world,ierr)
+  time1 = MPI_Wtime()
+
+  IF (mode < 2) THEN
+    DO i = 1,nloop
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),1,1)
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),-1,1)
+    ENDDO
+  ELSE
+    DO i = 1,nloop
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),1,1)
+    ENDDO
+  ENDIF
+
+  call MPI_Barrier(world,ierr)
+  time2 = MPI_Wtime()
+  time_remap1 = time2 - time1
+
+  IF (mode < 2) THEN
+    DO i = 1,nloop
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),1,2)
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),-1,2)
+    ENDDO
+  ELSE
+    DO i = 1,nloop
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),1,2)
+    ENDDO
+  ENDIF
+
+  call MPI_Barrier(world,ierr)
+  time3 = MPI_Wtime()
+  time_remap2 = time3 - time2
+
+  IF (mode < 2) THEN
+    DO i = 1,nloop
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),1,3)
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),-1,3)
+    ENDDO
+  ELSE
+    DO i = 1,nloop
+      call fft2d_only_one_remap(fft,c_loc(work),c_loc(work),1,3)
+    ENDDO
+  ENDIF
+
+  call MPI_Barrier(world,ierr)
+  time4 = MPI_Wtime()
+  time_remap3 = time4 - time3
+ENDIF
+
+! stats output
+! nfft = 2x larger for modes 0,1
+
+IF (mode < 2) then
+  nfft = 2*nloop
+ELSE 
+  nfft = nloop
 endif
 
+onetime = timefft/nfft
+nsize = 1.0 * nx * ny
+log2n = log(nsize)/log(2.0)
+floprate = 5.0 * nsize * log2n / onetime / (1024*1024)
+
+#ifdef FFT_SINGLE
+gridbytes = 4 * 2*fftsize
+#else
+gridbytes = 8 * 2*fftsize
+#endif
+
+nlen = 10
+
+IF (me == 0) THEN
+  PRINT *,"2d FFTs with %s library, precision =", &
+          fft2d_get_string(fft,"fft1d"),fft2d_get_string(fft,"precision")
+  PRINT *,"Grid size:",nx,ny
+  PRINT *,"  initial proc grid:",inpx,inpy
+  PRINT *,"  x pencil proc grid:", &
+          fft2d_get_int(fft,"npfast1"), &
+          fft2d_get_int(fft,"npfast2")
+  PRINT *,"  y pencil proc grid:", &
+          fft2d_get_int(fft,"npslow1"), &
+          fft2d_get_int(fft,"npslow2")
+  PRINT *,"  2d brick proc grid:", &
+          fft2d_get_int(fft,"npbrick1"), &
+          fft2d_get_int(fft,"npbrick2")
+  PRINT *,"  final proc grid:",outpx,outpy
+
+  IF (tuneflag /= 0) THEN
+    ntrial = fft2d_get_int(fft,"ntrial")
+    npertrial = fft2d_get_int(fft,"npertrial")
+    PRINT *,"Tuning trials & iterations:",ntrial,npertrial
+    ptr = fft2d_get_int_vector(fft,"cflags")
+    CALL C_F_POINTER(ptr,cflags,[nlen])
+    ptr = fft2d_get_int_vector(fft,"eflags")
+    CALL C_F_POINTER(ptr,eflags,[nlen])
+    ptr = fft2d_get_int_vector(fft,"pflags")
+    CALL C_F_POINTER(ptr,pflags,[nlen])
+    ptr = fft2d_get_double_vector(fft,"tfft")
+    CALL C_F_POINTER(ptr,tfft,[nlen])
+    ptr = fft2d_get_double_vector(fft,"t1d")
+    CALL C_F_POINTER(ptr,t1d,[nlen])
+    ptr = fft2d_get_double_vector(fft,"tremap")
+    CALL C_F_POINTER(ptr,tremap,[nlen])
+    ptr = fft2d_get_double_vector(fft,"tremap1")
+    CALL C_F_POINTER(ptr,tremap1,[nlen])
+    ptr = fft2d_get_double_vector(fft,"tremap2")
+    CALL C_F_POINTER(ptr,tremap2,[nlen])
+    ptr = fft2d_get_double_vector(fft,"tremap3")
+    CALL C_F_POINTER(ptr,tremap3,[nlen])
+    DO i = 1,ntrial
+      PRINT *,"  coll exch pack 3dFFT 1dFFT remap r1 r2 r3:", &
+              cflags(i),eflags(i),pflags(i),tfft(i),t1d(i),tremap(i), &
+              tremap1(i),tremap2(i),tremap3(i)
+    ENDDO
+  ENDIF
+
+  IF (mode == 0) THEN
+    PRINT *,nloop,"forward and",nloop,"back FFTs on",nprocs,"procs"
+  ELSE IF (mode == 1) then
+    PRINT *,nloop,"forward and",nloop,"back convolution FFTs on",nprocs,"procs"
+  ELSE IF (mode == 2) then
+    PRINT *,nloop,"forward FFTs on",nprocs,"procs"
+  ELSE IF (mode == 3) then
+    PRINT *,nloop,"forward convolution FFTs on",nprocs,"procs"
+  ENDIF
+
+  PRINT *,"Collective, exchange, pack methods:", &
+          fft2d_get_int(fft,"collective"), &
+          fft2d_get_int(fft,"exchange"), &
+          fft2d_get_int(fft,"pack")
+  PRINT *,"Memory usage (per-proc) for FFT grid =", &
+          1.0*gridbytes / 1024/1024,",MBytes"
+  PRINT *,"Memory usage (per-proc) by fftMPI =", &
+          1.0*fft2d_get_int64(fft,"memusage") / 1024/1024,"MBytes"
+  
+  IF (vflag /= 0) PRINT *,"Max error =",epsmax
+  IF (tuneflag /= 0) THEN
+    PRINT *,"Initialize grid =",timeinit-timesetup,"secs"
+  ELSE 
+    PRINT *,"Initialize grid =",timeinit-timetune,"secs"
+  ENDIF
+  PRINT *,"FFT setup =",timesetup,"secs"
+  PRINT *,"FFT tune =",timetune,"secs"
+  PRINT *,"Time for 2d FFTs =",timefft,"secs"
+  PRINT *,"  time/fft2d = %g secs",onetime
+  PRINT *,"  flop rate for 2d FFTs =",floprate,"Gflops"
+  IF (tflag /= 0) THEN
+    PRINT *,"Time for 1d FFTs only =",time1d,"secs"
+    PRINT *,"  time/fft1d =",time1d/nfft,"secs"
+    PRINT *,"  fraction of time in 1d FFTs =",time1d/timefft
+  ENDIF
+  IF (tflag /= 0) THEN
+    PRINT *,"Time for remaps only =",time_remap,"secs"
+    PRINT *,"  fraction of time in remaps =",time_remap/timefft
+    PRINT *,"Time for remap #1 =",time_remap1,"secs"
+    PRINT *,"  fraction of time in remap #1 =",time_remap1/timefft
+    PRINT *,"Time for remap #2 =",time_remap2,"secs"
+    PRINT *,"  fraction of time in remap #2 =",time_remap2/timefft
+    PRINT *,"Time for remap #3 =",time_remap3,"secs"
+    PRINT *,"  fraction of time in remap #3 =",time_remap3/timefft
+  ENDIF
+ENDIF
+
 end subroutine timing
+
+! ---------------------------------------------------------------------
+! deallocate memory for FFT grid
+! ---------------------------------------------------------------------
+
+subroutine deallocate_mine()
+use data
+implicit none
+
+deallocate(work)
+
+end subroutine deallocate_mine
+
+! ---------------------------------------------------------------------
+! ---------------------------------------------------------------------
+! utility functions
+! ---------------------------------------------------------------------
+! ---------------------------------------------------------------------
 
 ! ---------------------------------------------------------------------
 ! must be called by all procs in world

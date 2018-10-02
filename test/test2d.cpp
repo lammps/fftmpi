@@ -5,15 +5,15 @@
 //      -h = print help message
 //      -g Nx Ny = grid size (default = 8 8)
 //      -pin Px Py = proc grid (default = 0 0)
-//         specify 2d grid of procs for initial partition
-//         0 0 = code chooses Px Py, will be bricks
+//         specify 32 grid of procs for initial partition
+//         0 0 = code chooses Px Py, will be rectangles
 //      -pout Px Py = proc grid (default = 0 0)
 //         specify 2d grid of procs for final partition
 //         0 0 = code chooses Px Py
-//               will be bricks for mode = 0/2
+//               will be rectangles for mode = 0/2
 //               will be y pencils for mode = 1/3
 //      -n Nloop = iteration count (default = 1)
-//                 can use 0 if -tune enabled, then will set to nper or tdelta
+//                 can use 0 if -tune enabled, then will set by tuning operation
 //      -m 0/1/2/3 = FFT mode (default = 0)
 //         0 = 1 iteration = forward full FFT, backward full FFT
 //         1 = 1 iteration = forward convolution FFT, backward convolution FFT
@@ -43,14 +43,14 @@
 //         array = array based
 //         ptr = pointer based
 //         memcpy = memcpy based
-//      -t summary/details = timing info (default = summary)
-//         summary timings or detailed timing breakdown
-//      -r = remap only, no 1d FFTs
+//      -t = provide more timing details (not set by default)
+//         include timing breakdown, not just summary
+//      -r = remap only, no 1d FFTs (not set by default)
 //         useful for debugging
-//      -o output initial/final grid
+//      -o = output initial/final grid (not set by default)
 //         only useful for small problems
-//      -v = verify correctness of answer (default = no -v)
-//         only possible for FFT mode 0/1
+//      -v = verify correctness of answer (not set by default)
+//         only possible for FFT mode = 0/1
 
 // include files
 
@@ -660,6 +660,23 @@ void validate()
       if (delta > epsilon) epsilon = delta;
     }
 
+  } else if (iflag == INDEX) {
+    int ilocal,jlocal,iglobal,jglobal;
+    int nxlocal = inxhi - inxlo + 1;
+    double value;
+
+    for (int m = 0; m < nfft_in; m++) {
+      ilocal = m % nxlocal;
+      jlocal = m / nxlocal;
+      iglobal = inxlo + ilocal;
+      jglobal = inylo + jlocal;
+      value = jglobal + iglobal + 1;
+      delta = fabs(work[2*m]-value);
+      if (delta > epsilon) epsilon = delta;
+      delta = fabs(work[2*m+1]);
+      if (delta > epsilon) epsilon = delta;
+    }
+
   } else if (iflag == RANDOM) {
     double newvalue;
     seed = seedinit;
@@ -829,7 +846,7 @@ void timing()
 
     printf("Collective, exchange, pack methods: %d %d %d\n",
            fft->collective,fft->exchange,fft->packflag);
-    printf("Memory usage (per-proc) for FFT grid = %g MBytes\n",
+    printf("Memory usage (per-proc) for fftMPI = %g MBytes\n",
            (double) gridbytes / 1024/1024);
     printf("Memory usage (per-proc) by FFT lib = %g MBytes %ld\n",
            (double) fft->memusage / 1024/1024,fft->memusage);
@@ -930,9 +947,9 @@ void *smalloc(int64_t nbytes)
   void *ptr;
 
 #if defined(FFT_USE_TBB_ALLOCATOR)
-  ptr = scalable_aligned_malloc(nbytes, FFT_MEMALIGN);
+  ptr = scalable_aligned_malloc(nbytes,FFT_MEMALIGN);
 #else
-  int retval = posix_memalign(&ptr, FFT_MEMALIGN, nbytes);
+  int retval = posix_memalign(&ptr,FFT_MEMALIGN,nbytes);
   if (retval) ptr = NULL;
 #endif
 

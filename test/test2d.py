@@ -340,6 +340,7 @@ def initialize():
 
   elif iflag == STEP:
     nxlocal = inxhi - inxlo + 1
+    
     for m in xrange(nfft_in): 
       ilocal = m % nxlocal
       jlocal = m / nxlocal
@@ -351,6 +352,7 @@ def initialize():
 
   elif iflag == INDEX:
     nxlocal = inxhi - inxlo + 1
+    
     for m in xrange(nfft_in): 
       ilocal = m % nxlocal
       jlocal = m / nxlocal
@@ -414,6 +416,7 @@ def validate():
 
   elif iflag == STEP:
     nxlocal = inxhi - inxlo + 1
+    
     for m in xrange(nfft_in):
       ilocal = m % nxlocal
       jlocal = m / nxlocal
@@ -421,6 +424,20 @@ def validate():
       jglobal = inylo + jlocal
       if iglobal < nx/2 and jglobal < ny/2: value = 1.0
       else: value = 0.0
+      delta = math.fabs(work[2*m]-value)
+      if delta > epsilon: epsilon = delta
+      delta = math.fabs(work[2*m+1])
+      if delta > epsilon: epsilon = delta
+
+  elif iflag == INDEX:
+    nxlocal = inxhi - inxlo + 1
+    
+    for m in xrange(nfft_in):
+      ilocal = m % nxlocal
+      jlocal = m / nxlocal
+      iglobal = inxlo + ilocal
+      jglobal = inylo + jlocal
+      value = jglobal + iglobal + 1
       delta = math.fabs(work[2*m]-value)
       if delta > epsilon: epsilon = delta
       delta = math.fabs(work[2*m+1])
@@ -577,7 +594,7 @@ def timing():
        (fft.get("collective",1,0),fft.get("exchange",1,0),fft.get("pack",1,0))
     print "Memory usage (per-proc) for FFT grid = %g MBytes" % \
       (float(gridbytes) / 1024/1024)
-    print "Memory usage (per-proc) by FFT lib = %g MBytes" % \
+    print "Memory usage (per-proc) by fftMPI = %g MBytes" % \
        (float(fft.get("memusage",3,0)) / 1024/1024)
 
     if vflag: print "Max error = %g" % epsmax

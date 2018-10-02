@@ -103,10 +103,10 @@ void sfree(void *);
 // constants
 
 const char *syntax = 
-  "Syntax: test3d -g Nx Nx Nz -p Px Py Pz -n Nloop -m 0/1/2/3\n"
-  "               -i zero/step/82783 -m 0/1/2/3 -tune nper tmax extra\n"
-  "               -c point/all/combo -e pencil/brick -p array/ptr/memcpy\n"
-  "               -t -r -o -v";
+  "Syntax: test3d_c -g Nx Nx Nz -p Px Py Pz -n Nloop -m 0/1/2/3\n"
+  "                 -i zero/step/82783 -m 0/1/2/3 -tune nper tmax extra\n"
+  "                 -c point/all/combo -e pencil/brick -p array/ptr/memcpy\n"
+  "                 -t -r -o -v";
 
 enum{ZERO,STEP,INDEX,RANDOM};
 enum{POINT,ALL2ALL,COMBO};
@@ -519,7 +519,7 @@ void plan()
                outxlo,outxhi,outylo,outyhi,outzlo,outzhi,
                permute,&fftsize,&sendsize,&recvsize,
                flag,tuneper,tunemax,tuneextra);
-    if (nloop == 0) nloop = *((int *) fft3d_get(fft,"npertrial"));
+    if (nloop == 0) nloop = fft3d_get_int(fft,"npertrial");
   }
 
   MPI_Barrier(world);
@@ -529,8 +529,7 @@ void plan()
     timesetup = time2 - time1;
     timetune = 0.0;
   } else {
-    // NOTE: need new syntax
-    // fft3d_get(fft,"setuptime",&timesetup);
+    timesetup = fft3d_get_double(fft,"setuptime");
     timetune = time2 - time1;
   }
 }
@@ -678,6 +677,26 @@ void validate()
       kglobal = inzlo + klocal;
       if (iglobal < nx/2 && jglobal < ny/2 && kglobal < nz/2) value = 1.0;
       else value = 0.0;
+      delta = fabs(work[2*m]-value);
+      if (delta > epsilon) epsilon = delta;
+      delta = fabs(work[2*m+1]);
+      if (delta > epsilon) epsilon = delta;
+    }
+
+  } else if (iflag == INDEX) {
+    int ilocal,jlocal,klocal,iglobal,jglobal,kglobal;
+    int nxlocal = inxhi - inxlo + 1;
+    int nylocal = inyhi - inylo + 1;
+    double value;
+
+    for (int m = 0; m < nfft_in; m++) {
+      ilocal = m % nxlocal;
+      jlocal = (m/nxlocal) % nylocal;
+      klocal = m / (nxlocal*nylocal);
+      iglobal = inxlo + ilocal;
+      jglobal = inylo + jlocal;
+      kglobal = inzlo + klocal;
+      value = kglobal + jglobal + iglobal + 1;
       delta = fabs(work[2*m]-value);
       if (delta > epsilon) epsilon = delta;
       delta = fabs(work[2*m+1]);
@@ -838,46 +857,47 @@ void timing()
 
   if (me == 0) {
     printf("3d FFTs with %s library, precision = %s\n",
-           (char *) fft3d_get(fft,"fft1d"),(char *) fft3d_get(fft,"precision"));
+           fft3d_get_string(fft,"fft1d"),fft3d_get_string(fft,"precision"));
     printf("Grid size: %d %d %d\n",nx,ny,nz);
     printf("  initial proc grid: %d %d %d\n",inpx,inpy,inpz);
     printf("  x pencil proc grid: %d %d %d\n",
-           *((int *) fft3d_get(fft,"npfast1")),
-           *((int *) fft3d_get(fft,"npfast2")),
-           *((int *) fft3d_get(fft,"npfast3")));
+           fft3d_get_int(fft,"npfast1"),
+           fft3d_get_int(fft,"npfast2"),
+           fft3d_get_int(fft,"npfast3"));
     printf("  y pencil proc grid: %d %d %d\n",
-           *((int *) fft3d_get(fft,"npmid1")),
-           *((int *) fft3d_get(fft,"npmid2")),
-           *((int *) fft3d_get(fft,"npmid3")));
+           fft3d_get_int(fft,"npmid1"),
+           fft3d_get_int(fft,"npmid2"),
+           fft3d_get_int(fft,"npmid3"));
     printf("  z pencil proc grid: %d %d %d\n",
-           *((int *) fft3d_get(fft,"npslow1")),
-           *((int *) fft3d_get(fft,"npslow2")),
-           *((int *) fft3d_get(fft,"npslow3")));
+           fft3d_get_int(fft,"npslow1"),
+           fft3d_get_int(fft,"npslow2"),
+           fft3d_get_int(fft,"npslow3"));
     printf("  3d brick proc grid: %d %d %d\n",
-           *((int *) fft3d_get(fft,"npbrick1")),
-           *((int *) fft3d_get(fft,"npbrick2")),
-           *((int *) fft3d_get(fft,"npbrick3")));
+           fft3d_get_int(fft,"npbrick1"),
+           fft3d_get_int(fft,"npbrick2"),
+           fft3d_get_int(fft,"npbrick3"));
     printf("  final proc grid: %d %d %d\n",outpx,outpy,outpz);
 
     if (tuneflag) {
-      int ntrial = *((int *) fft3d_get(fft,"ntrial"));
-      int npertrial = *((int *) fft3d_get(fft,"npertrial"));
+      int ntrial = fft3d_get_int(fft,"ntrial");
+      int npertrial = fft3d_get_int(fft,"npertrial");
       printf("Tuning trials & iterations: %d %d\n",ntrial,npertrial);
-      int *cflags = (int *) fft3d_get(fft,"cflags");
-      int *eflags = (int *) fft3d_get(fft,"eflags");
-      int *pflags = (int *) fft3d_get(fft,"pflags");
-      double *tfft = (double *) fft3d_get(fft,"tfft");
-      double *t1d = (double *) fft3d_get(fft,"t1d");
-      double *tremap = (double *) fft3d_get(fft,"tremap");
-      double *tremap1 = (double *) fft3d_get(fft,"tremap1");
-      double *tremap2 = (double *) fft3d_get(fft,"tremap2");
-      double *tremap3 = (double *) fft3d_get(fft,"tremap3");
+      int *cflags = fft3d_get_int_vector(fft,"cflags");
+      int *eflags = fft3d_get_int_vector(fft,"eflags");
+      int *pflags = fft3d_get_int_vector(fft,"pflags");
+      double *tfft = fft3d_get_double_vector(fft,"tfft");
+      double *t1d = fft3d_get_double_vector(fft,"t1d");
+      double *tremap = fft3d_get_double_vector(fft,"tremap");
+      double *tremap1 = fft3d_get_double_vector(fft,"tremap1");
+      double *tremap2 = fft3d_get_double_vector(fft,"tremap2");
+      double *tremap3 = fft3d_get_double_vector(fft,"tremap3");
+      double *tremap4 = fft3d_get_double_vector(fft,"tremap4");
       for (int i = 0; i < ntrial; i++)
-        printf("  coll exch pack 3dFFT 1dFFT remap r1 r2 r3: "
-               "%d %d %d %g %g %g %g %g %g\n",
+        printf("  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: "
+               "%d %d %d %g %g %g %g %g %g %g\n",
                cflags[i],eflags[i],pflags[i],
                tfft[i],t1d[i],tremap[i],
-               tremap1[i],tremap2[i],tremap3[i]);
+               tremap1[i],tremap2[i],tremap3[i],tremap4[i]);
     }
 
     if (mode == 0)
@@ -896,7 +916,7 @@ void timing()
            *((int *) fft3d_get(fft,"pack")));
     printf("Memory usage (per-proc) for FFT grid = %g MBytes\n",
            (double) gridbytes / 1024/1024);
-    printf("Memory usage (per-proc) by FFT lib = %g MBytes\n",
+    printf("Memory usage (per-proc) by fftMPI = %g MBytes\n",
            (double) *((int64_t *) fft3d_get(fft,"memusage")) / 1024/1024);
 
     if (vflag) printf("Max error = %g\n",epsmax);
@@ -997,9 +1017,9 @@ void *smalloc(int64_t nbytes)
   void *ptr;
 
 #if defined(FFT_USE_TBB_ALLOCATOR)
-  ptr = scalable_aligned_malloc(nbytes, FFT_MEMALIGN);
+  ptr = scalable_aligned_malloc(nbytes,FFT_MEMALIGN);
 #else
-  int retval = posix_memalign(&ptr, FFT_MEMALIGN, nbytes);
+  int retval = posix_memalign(&ptr,FFT_MEMALIGN,nbytes);
   if (retval) ptr = NULL;
 #endif
 

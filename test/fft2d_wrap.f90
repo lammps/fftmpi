@@ -23,17 +23,53 @@ interface
     integer(c_int), value :: value
   end subroutine fft2d_set
 
-  SUBROUTINE fft2d_get(ptr,keyword,value) BIND(c)
+  function fft2d_get_int(ptr,keyword) BIND(c)
     use iso_c_binding
+    integer(c_int) :: fft2d_get_int
     type(c_ptr), value :: ptr
     CHARACTER(c_char) :: keyword(*)
-    integer(c_int) :: value
-  end subroutine fft2d_get
+  end function fft2d_get_int
+
+  function fft2d_get_double(ptr,keyword) BIND(c)
+    use iso_c_binding
+    real(c_double) :: fft2d_get_double
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft2d_get_double
+
+  function fft2d_get_int64(ptr,keyword) BIND(c)
+    use iso_c_binding
+    integer(c_int64_t) :: fft2d_get_int64
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft2d_get_int64
+
+  function fft2d_get_string(ptr,keyword) BIND(c)
+    use iso_c_binding
+    type(c_ptr) :: fft2d_get_string
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft2d_get_string
+
+  function fft2d_get_int_vector(ptr,keyword) BIND(c)
+    use iso_c_binding
+    type(c_ptr) :: fft2d_get_int_vector
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft2d_get_int_vector
+
+  function fft2d_get_double_vector(ptr,keyword) BIND(c)
+    use iso_c_binding
+    type(c_ptr) :: fft2d_get_double_vector
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft2d_get_double_vector
 
   SUBROUTINE fft2d_setup(ptr,nfast,nslow, &
     in_ilo,in_ihi,in_jlo,in_jhi, &
     out_ilo,out_ihi,out_jlo,out_jhi, &
-    permute,fftsize,sendsize,recvsize) BIND(c)
+    permute,fftsize,sendsize,recvsize) &
+    BIND(c,name='fft2d_setup_fortran')
     use iso_c_binding
     type(c_ptr), value :: ptr
     INTEGER(c_int), VALUE :: nfast,nslow
@@ -43,17 +79,11 @@ interface
     INTEGER(c_int) :: fftsize,sendsize,recvsize
   end subroutine fft2d_setup
 
-  SUBROUTINE fft2d_setup_memory_single(ptr,sendbuf,recvbuf) bind(c)
+  SUBROUTINE fft2d_setup_memory(ptr,sendbuf,recvbuf) bind(c)
     use iso_c_binding
     type(c_ptr), value :: ptr
-    real(c_float) :: sendbuf,recvbuf
-  end subroutine fft2d_setup_memory_single
-
-  SUBROUTINE fft2d_setup_memory_double(ptr,sendbuf,recvbuf) bind(c)
-    use iso_c_binding
-    type(c_ptr), value :: ptr
-    real(c_double) :: sendbuf,recvbuf
-  end subroutine fft2d_setup_memory_double
+    type(c_ptr) :: sendbuf,recvbuf
+  end subroutine fft2d_setup_memory
 
   SUBROUTINE fft2d_compute(ptr,in,out,flag) BIND(c)
     use iso_c_binding
@@ -83,6 +113,23 @@ interface
     INTEGER(c_int), VALUE :: flag,which
   end subroutine fft2d_only_one_remap
 
+  SUBROUTINE fft2d_tune(ptr,nfast,nslow, &
+    in_ilo,in_ihi,in_jlo,in_jhi, &
+    out_ilo,out_ihi,out_jlo,out_jhi, &
+    permute,fftsize,sendsize,recvsize,flag,niter,tmax,tflag) &
+    BIND(c,name='fft2d_tune_fortran')
+    use iso_c_binding
+    type(c_ptr), value :: ptr
+    INTEGER(c_int), VALUE :: nfast,nslow
+    INTEGER(c_int), VALUE :: in_ilo,in_ihi,in_jlo,in_jhi
+    INTEGER(c_int), VALUE :: out_ilo,out_ihi,out_jlo,out_jhi
+    INTEGER(c_int), VALUE :: permute
+    INTEGER(c_int) :: fftsize,sendsize,recvsize
+    INTEGER(c_int), VALUE :: flag,niter
+    REAL(c_double), value :: tmax
+    INTEGER(c_int), VALUE :: tflag
+  end subroutine fft2d_tune
+
   SUBROUTINE remap2d_create(comm,ptr) &
           BIND(c,name='remap2d_create_fortran')
     use iso_c_binding
@@ -105,7 +152,8 @@ interface
   SUBROUTINE remap2d_setup(ptr, &
     in_ilo,in_ihi,in_jlo,in_jhi, &
     out_ilo,out_ihi,out_jlo,out_jhi, &
-    nqty,permute,memoryflag,sendsize,recvsize) BIND(c)
+    nqty,permute,memoryflag,sendsize,recvsize) &
+    BIND(c,name='remap2d_setup_fortran')
     use iso_c_binding
     type(c_ptr), value :: ptr
     INTEGER(c_int), VALUE :: in_ilo,in_ihi,in_jlo,in_jhi

@@ -23,17 +23,53 @@ interface
     integer(c_int), value :: value
   end subroutine fft3d_set
 
-  SUBROUTINE fft3d_get(ptr,keyword,value) BIND(c)
+  function fft3d_get_int(ptr,keyword) BIND(c)
     use iso_c_binding
+    integer(c_int) :: fft3d_get_int
     type(c_ptr), value :: ptr
     CHARACTER(c_char) :: keyword(*)
-    integer(c_int) :: value
-  end subroutine fft3d_get
+  end function fft3d_get_int
+
+  function fft3d_get_double(ptr,keyword) BIND(c)
+    use iso_c_binding
+    real(c_double) :: fft3d_get_double
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft3d_get_double
+
+  function fft3d_get_int64(ptr,keyword) BIND(c)
+    use iso_c_binding
+    integer(c_int64_t) :: fft3d_get_int64
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft3d_get_int64
+
+  function fft3d_get_string(ptr,keyword) BIND(c)
+    use iso_c_binding
+    type(c_ptr) :: fft3d_get_string
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft3d_get_string
+
+  function fft3d_get_int_vector(ptr,keyword) BIND(c)
+    use iso_c_binding
+    type(c_ptr) :: fft3d_get_int_vector
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft3d_get_int_vector
+
+  function fft3d_get_double_vector(ptr,keyword) BIND(c)
+    use iso_c_binding
+    type(c_ptr) :: fft3d_get_double_vector
+    type(c_ptr), value :: ptr
+    CHARACTER(c_char) :: keyword(*)
+  end function fft3d_get_double_vector
 
   SUBROUTINE fft3d_setup(ptr,nfast,nmid,nslow, &
     in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
     out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
-    permute,fftsize,sendsize,recvsize) BIND(c)
+    permute,fftsize,sendsize,recvsize) &
+    BIND(c,name='fft3d_setup_fortran')
     use iso_c_binding
     type(c_ptr), value :: ptr
     INTEGER(c_int), VALUE :: nfast,nmid,nslow
@@ -43,22 +79,16 @@ interface
     INTEGER(c_int) :: fftsize,sendsize,recvsize
   end subroutine fft3d_setup
 
-  SUBROUTINE fft3d_setup_memory_single(ptr,sendbuf,recvbuf) bind(c)
+  SUBROUTINE fft3d_setup_memory(ptr,sendbuf,recvbuf) bind(c)
     use iso_c_binding
     type(c_ptr), value :: ptr
-    real(c_float) :: sendbuf,recvbuf
-  end subroutine fft3d_setup_memory_single
-
-  SUBROUTINE fft3d_setup_memory_double(ptr,sendbuf,recvbuf) bind(c)
-    use iso_c_binding
-    type(c_ptr), value :: ptr
-    real(c_double) :: sendbuf,recvbuf
-  end subroutine fft3d_setup_memory_double
+    type(c_ptr) :: sendbuf,recvbuf
+  end subroutine fft3d_setup_memory
 
   SUBROUTINE fft3d_compute(ptr,in,out,flag) BIND(c)
     use iso_c_binding
     type(c_ptr), value :: ptr
-    TYPE(c_ptr), value :: in,out
+    type(c_ptr), value :: in,out
     integer(c_int), value :: flag
   end subroutine fft3d_compute
 
@@ -86,7 +116,8 @@ interface
   SUBROUTINE fft3d_tune(ptr,nfast,nmid,nslow, &
     in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
     out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
-    permute,fftsize,sendsize,recvsize,flag,niter,tmax,tflag) BIND(c)
+    permute,fftsize,sendsize,recvsize,flag,niter,tmax,tflag) &
+    BIND(c,name='fft3d_tune_fortran')
     use iso_c_binding
     type(c_ptr), value :: ptr
     INTEGER(c_int), VALUE :: nfast,nmid,nslow
@@ -121,7 +152,8 @@ interface
   SUBROUTINE remap3d_setup(ptr, &
     in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
     out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
-    nqty,permute,memoryflag,sendsize,recvsize) BIND(c)
+    nqty,permute,memoryflag,sendsize,recvsize) &
+    BIND(c,name='remap3d_setup_fortran')
     use iso_c_binding
     type(c_ptr), value :: ptr
     INTEGER(c_int), VALUE :: in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi

@@ -15,7 +15,6 @@ AM = 1.0/IM
 IQ = 127773
 IR = 2836
 
-
 syntax = \
   "Syntax: test3d.py -g Nx Ny Nz -p Px Py Pz -n Nloop -m 0/1/2/3\n" + \
   "               -i zero/step/82783 -m 0/1/2/3 -tune nper tmax extra\n" + \
@@ -388,23 +387,31 @@ def initialize():
 
   elif iflag == STEP:
     nxlocal = inxhi - inxlo + 1
-    for m in xrange(nfft_in): 
+    nylocal = inyhi - inylo + 1
+
+    for m in xrange(nfft_in):
       ilocal = m % nxlocal
-      jlocal = m / nxlocal
+      jlocal = (m/nxlocal) % nylocal
+      klocal = m / (nxlocal*nylocal)
       iglobal = inxlo + ilocal
       jglobal = inylo + jlocal
-      if iglobal < nx/2 and jglobal < ny/2: work[2*m] = 1.0
+      kglobal = inzlo + klocal
+      if iglobal < nx/2 and jglobal < ny/2 and kglobal < nz/2: work[2*m] = 1.0
       else: work[2*m] = 0.0
       work[2*m+1] = 0.0
 
   elif iflag == INDEX:
     nxlocal = inxhi - inxlo + 1
-    for m in xrange(nfft_in): 
+    nylocal = inyhi - inylo + 1
+
+    for m in xrange(nfft_in):
       ilocal = m % nxlocal
-      jlocal = m / nxlocal
+      jlocal = (m/nxlocal) % nylocal
+      klocal = m / (nxlocal*nylocal)
       iglobal = inxlo + ilocal
       jglobal = inylo + jlocal
-      work[2*m] = jglobal + iglobal + 1
+      kglobal = inzlo + klocal
+      work[2*m] = kglobal + jglobal + iglobal + 1
       work[2*m+1] = 0.0
 
   elif iflag == RANDOM:
@@ -462,13 +469,34 @@ def validate():
 
   elif iflag == STEP:
     nxlocal = inxhi - inxlo + 1
+    nylocal = inyhi - inylo + 1
+    
     for m in xrange(nfft_in):
       ilocal = m % nxlocal
-      jlocal = m / nxlocal
+      jlocal = (m/nxlocal) % nylocal
+      klocal = m / (nxlocal*nylocal)
       iglobal = inxlo + ilocal
       jglobal = inylo + jlocal
-      if iglobal < nx/2 and jglobal < ny/2: value = 1.0
+      kglobal = inzlo + klocal
+      if iglobal < nx/2 and jglobal < ny/2 and kglobal < nz/2: value = 1.0
       else: value = 0.0
+      delta = math.fabs(work[2*m]-value)
+      if delta > epsilon: epsilon = delta
+      delta = math.fabs(work[2*m+1])
+      if delta > epsilon: epsilon = delta
+
+  elif iflag == INDEX:
+    nxlocal = inxhi - inxlo + 1
+    nylocal = inyhi - inylo + 1
+    
+    for m in xrange(nfft_in):
+      ilocal = m % nxlocal
+      jlocal = (m/nxlocal) % nylocal
+      klocal = m / (nxlocal*nylocal)
+      iglobal = inxlo + ilocal
+      jglobal = inylo + jlocal
+      kglobal = inzlo + klocal
+      value = kglobal + jglobal + iglobal + 1
       delta = math.fabs(work[2*m]-value)
       if delta > epsilon: epsilon = delta
       delta = math.fabs(work[2*m+1])
@@ -639,7 +667,7 @@ def timing():
       (fft.get("collective",1,0),fft.get("exchange",1,0),fft.get("pack",1,0))
     print "Memory usage (per-proc) for FFT grid = %g MBytes" % \
       (float(gridbytes) / 1024/1024)
-    print "Memory usage (per-proc) by FFT lib = %g MBytes" % \
+    print "Memory usage (per-proc) by fftMPI = %g MBytes" % \
       (float(fft.get("memusage",3,0)) / 1024/1024)
 
     if vflag: print "Max error = %g" % epsmax
