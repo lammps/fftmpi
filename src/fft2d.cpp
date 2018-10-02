@@ -32,6 +32,12 @@ using namespace FFTMPI_NS;
 #define NFACTOR 50
 #define BIG 1.0e20
 
+#ifdef FFT_LONGLONG_TO_LONG
+#define MPI_FFT_BIGINT MPI_LONG
+#else
+#define MPI_FFT_BIGINT MPI_LONG_LONG
+#endif
+
 typedef int64_t bigint;
 
 /* ----------------------------------------------------------------------
@@ -233,6 +239,24 @@ void FFT2d::setup(int user_nfast, int user_nslow,
 
   if (!prime_factorable(nfast)) error->all("Invalid nfast");
   if (!prime_factorable(nslow)) error->all("Invalid nslow");
+
+  // error checks in indices and tiling
+
+  flag = 0;
+  if (in_ilo > in_ihi+1 || in_jlo > in_jhi+1) flag = 1;
+  if (in_ilo < 0 || in_jlo < 0) flag = 1;
+  if (in_ihi >= nfast || in_jhi >= nslow) flag = 1;
+
+  MPI_Allreduce(&flag,&allflag,1,MPI_INT,MPI_MAX,world);
+
+  if (allflag) error->all("FFT setup in/out indices are invalid");
+
+  bigint n = (bigint) (in_ihi-in_ilo+1) * (in_jhi-in_jlo+1);
+  bigint nall;
+  MPI_Allreduce(&n,&nall,1,MPI_FFT_BIGINT,MPI_SUM,world);
+
+  if (nall != ((bigint) nfast * nslow))
+    error->all("FFT setup in/out indices do not tile grid");
 
   // set collective flags for different remap operations
   // bp = brick2pencil or pencil2brick, pp = pencel2pencil
@@ -454,6 +478,9 @@ void FFT2d::deallocate_setup()
 
 void FFT2d::setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
 {
+  if (!setupflag) error->all("Cannot setup FFT memory before setup");
+  if (memoryflag) error-> all("Cannot setup FFT memory with memoryflag set");
+
   setup_memory_flag = 1;
   sendbuf = user_sendbuf;
   recvbuf = user_recvbuf;
@@ -1045,7 +1072,7 @@ void FFT2d::remap_forward_create(int &sendsize, int &recvsize)
     remap_prefast->remap2d->
       setup(in_ilo,in_ihi,in_jlo,in_jhi,
             fast_ilo,fast_ihi,fast_jlo,fast_jhi,
-            2,0,0,&ssize,&rsize);
+            2,0,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_prefast->remap2d_extra = NULL;
@@ -1063,7 +1090,7 @@ void FFT2d::remap_forward_create(int &sendsize, int &recvsize)
     remap_fastslow->remap2d->
       setup(fast_ilo,fast_ihi,fast_jlo,fast_jhi,
             slow_ilo,slow_ihi,slow_jlo,slow_jhi,
-            2,1,0,&ssize,&rsize);
+            2,1,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_fastslow->remap2d_extra = NULL;
@@ -1075,7 +1102,7 @@ void FFT2d::remap_forward_create(int &sendsize, int &recvsize)
     remap_fastslow->remap2d->
       setup(fast_ilo,fast_ihi,fast_jlo,fast_jhi,
             brick_ilo,brick_ihi,brick_jlo,brick_jhi,
-            2,0,0,&ssize,&rsize);
+            2,0,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_fastslow->remap2d_extra = new Remap2d(world);
@@ -1084,7 +1111,7 @@ void FFT2d::remap_forward_create(int &sendsize, int &recvsize)
     remap_fastslow->remap2d_extra->
       setup(brick_ilo,brick_ihi,brick_jlo,brick_jhi,
             slow_ilo,slow_ihi,slow_jlo,slow_jhi,
-            2,1,0,&ssize,&rsize);
+            2,1,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
   }
@@ -1103,7 +1130,7 @@ void FFT2d::remap_forward_create(int &sendsize, int &recvsize)
     remap_postslow->remap2d->
       setup(slow_jlo,slow_jhi,slow_ilo,slow_ihi,
             out_jlo,out_jhi,out_ilo,out_ihi,
-            2,newpermute,0,&ssize,&rsize);
+            2,newpermute,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_postslow->remap2d_extra = NULL;
@@ -1130,7 +1157,7 @@ void FFT2d::remap_inverse_create(int &sendsize, int &recvsize)
       remap_preslow->remap2d->
         setup(out_ilo,out_ihi,out_jlo,out_jhi,
               slow_ilo,slow_ihi,slow_jlo,slow_jhi,
-              2,1,0,&ssize,&rsize);
+              2,1,0,ssize,rsize);
       sendsize = MAX(sendsize,ssize);
       recvsize = MAX(recvsize,rsize);
     } else if (permute == 1) {
@@ -1140,7 +1167,7 @@ void FFT2d::remap_inverse_create(int &sendsize, int &recvsize)
       remap_preslow->remap2d->
         setup(out_jlo,out_jhi,out_ilo,out_ihi,
               slow_jlo,slow_jhi,slow_ilo,slow_ihi,
-              2,0,0,&ssize,&rsize);
+              2,0,0,ssize,rsize);
       sendsize = MAX(sendsize,ssize);
       recvsize = MAX(recvsize,rsize);
     }
@@ -1159,7 +1186,7 @@ void FFT2d::remap_inverse_create(int &sendsize, int &recvsize)
     remap_slowfast->remap2d->
       setup(slow_jlo,slow_jhi,slow_ilo,slow_ihi,
             fast_jlo,fast_jhi,fast_ilo,fast_ihi,
-            2,1,0,&ssize,&rsize);
+            2,1,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_slowfast->remap2d_extra = NULL;
@@ -1171,7 +1198,7 @@ void FFT2d::remap_inverse_create(int &sendsize, int &recvsize)
     remap_slowfast->remap2d->
       setup(slow_jlo,slow_jhi,slow_ilo,slow_ihi,
             brick_jlo,brick_jhi,brick_ilo,brick_ihi,
-            2,0,0,&ssize,&rsize);
+            2,0,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_slowfast->remap2d_extra = new Remap2d(world); 
@@ -1180,7 +1207,7 @@ void FFT2d::remap_inverse_create(int &sendsize, int &recvsize)
     remap_slowfast->remap2d_extra->
       setup(brick_jlo,brick_jhi,brick_ilo,brick_ihi,
             fast_jlo,fast_jhi,fast_ilo,fast_ihi,
-            2,1,0,&ssize,&rsize);
+            2,1,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
   }
@@ -1195,7 +1222,7 @@ void FFT2d::remap_inverse_create(int &sendsize, int &recvsize)
     remap_postfast->remap2d->
       setup(fast_ilo,fast_ihi,fast_jlo,fast_jhi,
             in_ilo,in_ihi,in_jlo,in_jhi,
-            2,0,0,&ssize,&rsize);
+            2,0,0,ssize,rsize);
     sendsize = MAX(sendsize,ssize);
     recvsize = MAX(recvsize,rsize);
     remap_postfast->remap2d_extra = NULL;
@@ -1528,7 +1555,7 @@ void FFT2d::procfactors(int nx, int ny, int &npx, int &npy, int &ipx, int &ipy)
   for (i = 0; i < nfactor; i++) {
     ifac = factors[i];
     for (j = i; j < nfactor; j++) {
-      jfac = factors[j];
+      jfac = nprocs/ifac;
       if (ifac*jfac != nprocs) continue;
       if (ifac > jfac) continue;
       

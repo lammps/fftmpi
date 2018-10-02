@@ -17,7 +17,7 @@ class Remap2d {
   Remap2d(MPI_Comm);
   ~Remap2d();
   void setup(int, int, int, int, int, int, int, int,
-             int, int, int, int *, int *);
+             int, int, int, int &, int &);
   void remap(FFT_SCALAR *, FFT_SCALAR *, FFT_SCALAR *, FFT_SCALAR *);
 
  private:

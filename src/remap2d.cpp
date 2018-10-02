@@ -92,7 +92,7 @@ Remap2d::~Remap2d()
   // free new MPI communicator for collective comm
 
   if (collective) {
-    MPI_Comm_free(&newcomm);
+    if (newcomm != MPI_COMM_NULL) MPI_Comm_free(&newcomm);
     memory->sfree(pgroup);
   }
 
@@ -154,7 +154,7 @@ Remap2d::~Remap2d()
 void Remap2d::setup(int in_ilo, int in_ihi, int in_jlo, int in_jhi,
                     int out_ilo, int out_ihi, int out_jlo, int out_jhi,
                     int nqty, int user_permute, int user_memoryflag, 
-                    int *user_sendsize, int *user_recvsize)
+                    int &user_sendsize, int &user_recvsize)
 {
   int i,iproc,ibuf,sendsize,recvsize;
   struct extent_2d in,out,overlap;
@@ -442,6 +442,8 @@ void Remap2d::setup(int in_ilo, int in_ihi, int in_jlo, int in_jhi,
     MPI_Comm_group(world,&orig_group);
     MPI_Group_incl(orig_group,ngroup,pgroup,&new_group);
     MPI_Comm_create(world,new_group,&newcomm);
+    MPI_Group_free(&orig_group);
+    MPI_Group_free(&new_group);
 
     // create send and recv buffers for AlltoAllv collective
 
@@ -468,7 +470,7 @@ void Remap2d::setup(int in_ilo, int in_ihi, int in_jlo, int in_jhi,
 
     if (!sendcnts || !senddispls || !sendmap ||
         !recvcnts || !recvdispls || !recvmap)
-      error->one("Could not allocate all2all args");
+      if (ngroup) error->one("Could not allocate all2all args");
 
     // populate sendcnts and recvdispls vectors
     // order and size of proc group is different than send_proc
@@ -516,8 +518,35 @@ void Remap2d::setup(int in_ilo, int in_ihi, int in_jlo, int in_jhi,
 
   // return sizes for send and recv buffers
 
-  *user_sendsize = sendsize;
-  *user_recvsize = recvsize;
+  user_sendsize = sendsize;
+  user_recvsize = recvsize;
+
+  // set memusage
+  // note there was also temporary allocation of
+  //   inarray,outarray = Nprocs * sizeof(struc extent_2d)
+
+  memusage = 0;
+
+  // allocated for both point-to-point and collective comm
+  // 3 send vectors and packplan
+  // 4 recv vectors, request, and unpackplan
+  // send and recv bufs if caller doesn't allocate them
+
+  memusage += 3*nsend * sizeof(int);
+  memusage += nsend * sizeof(struct pack_plan_2d);
+
+  memusage += 4*nrecv * sizeof(int);
+  memusage += nrecv * sizeof(MPI_Request *);
+  memusage += nrecv * sizeof(struct pack_plan_2d);
+
+  if (memoryflag) {
+    memusage += (int64_t) sendsize * sizeof(FFT_SCALAR);
+    memusage += (int64_t) recvsize * sizeof(FFT_SCALAR);
+  }
+
+  // allocated only for collective commm
+    
+  if (collective) memusage += 7*ngroup * sizeof(int);
 }
 
 /* ----------------------------------------------------------------------
@@ -600,9 +629,10 @@ void Remap2d::remap(FFT_SCALAR *in, FFT_SCALAR *out,
 
     // perform All2All
 
-    MPI_Alltoallv(sendbuf,sendcnts,senddispls,MPI_FFT_SCALAR,
-                  recvbuf,recvcnts,recvdispls,MPI_FFT_SCALAR,
-                  newcomm);
+    if (newcomm != MPI_COMM_NULL)
+      MPI_Alltoallv(sendbuf,sendcnts,senddispls,MPI_FFT_SCALAR,
+                    recvbuf,recvcnts,recvdispls,MPI_FFT_SCALAR,
+                    newcomm);
       
     // unpack the data from recvbuf into out
 

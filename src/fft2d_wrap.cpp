@@ -1,10 +1,10 @@
-// C or Fortran style library interface to FFT library
+// C interface to fftMPI library, 2d FFT functions
 
 #include <string.h>
 #include <stdlib.h>
+
 #include "fft2d_wrap.h"
 #include "fft2d.h"
-#include "remap2d.h"
 
 using namespace FFTMPI_NS;
 
@@ -29,32 +29,6 @@ void fft2d_create_fortran(MPI_Fint fcomm, int precision, void **ptr)
 {
   MPI_Comm ccomm = MPI_Comm_f2c(fcomm);
   FFT2d *fft = new FFT2d(ccomm,precision);
-  *ptr = (void *) fft;
-}
-
-/* ----------------------------------------------------------------------
-   create an instance of a 2d FFT and return pointer to it
-   caller doesn't know MPI communicator, so use MPI_COMM_WORLD
-   initialize MPI if needed
-------------------------------------------------------------------------- */
-
-void fft2d_create_no_mpi(int precision, void **ptr)
-{
-  int flag;
-  MPI_Initialized(&flag);
-
-  // NOTE: how should this really work, set world = 0, nprocs = 1, me = 0 ??
-  // no init?
-  
-  if (!flag) {
-    int argc = 0;
-    char **argv = NULL;
-    MPI_Init(&argc,&argv);
-  }
-
-  MPI_Comm communicator = MPI_COMM_WORLD;
-
-  FFT2d *fft = new FFT2d(communicator,precision);
   *ptr = (void *) fft;
 }
 
@@ -121,6 +95,66 @@ void *fft2d_get(void *ptr, const char *keyword)
 }
 
 /* ----------------------------------------------------------------------
+   get value of an internal integer variable
+------------------------------------------------------------------------- */
+
+int fft2d_get_int(void *ptr, const char *keyword)
+{
+  int value = *((int *) fft2d_get(ptr,keyword));
+  return value;
+}
+
+/* ----------------------------------------------------------------------
+   get value of an internal double variable
+------------------------------------------------------------------------- */
+
+double fft2d_get_double(void *ptr, const char *keyword)
+{
+  double value = *((double *) fft2d_get(ptr,keyword));
+  return value;
+}
+
+/* ----------------------------------------------------------------------
+   get value of an internal int64 variable
+------------------------------------------------------------------------- */
+
+int64_t fft2d_get_int64(void *ptr, const char *keyword)
+{
+  int64_t value = *((int64_t *) fft2d_get(ptr,keyword));
+  return value;
+}
+
+/* ----------------------------------------------------------------------
+   get value of an internal string variable
+------------------------------------------------------------------------- */
+
+char *fft2d_get_string(void *ptr, const char *keyword)
+{
+  char *value = (char *) fft2d_get(ptr,keyword);
+  return value;
+}
+
+/* ----------------------------------------------------------------------
+   get pointer to an internal vector of ints variable
+------------------------------------------------------------------------- */
+
+int *fft2d_get_int_vector(void *ptr, const char *keyword)
+{
+  int *value = (int *) fft2d_get(ptr,keyword);
+  return value;
+}
+
+/* ----------------------------------------------------------------------
+   get pointer to an internal vector of doubles variable
+------------------------------------------------------------------------- */
+
+double *fft2d_get_double_vector(void *ptr, const char *keyword)
+{
+  double *value = (double *) fft2d_get(ptr,keyword);
+  return value;
+}
+
+/* ----------------------------------------------------------------------
    create plan for performing a 2d FFT
 ------------------------------------------------------------------------- */
 
@@ -137,6 +171,30 @@ void fft2d_setup(void *ptr,
   fft->setup(nfast,nslow,
              in_ilo,in_ihi,in_jlo,in_jhi,
              out_ilo,out_ihi,out_jlo,out_jhi,
+             permute,fftsize,sendsize,recvsize);
+  *fftsize_caller = fftsize;
+  *sendsize_caller = sendsize;
+  *recvsize_caller = recvsize;
+}
+
+/* ----------------------------------------------------------------------
+   create plan for performing a 2d FFT
+   Fortran interface where indices are 1 to N inclusive
+------------------------------------------------------------------------- */
+
+void fft2d_setup_fortran(void *ptr,
+                         int nfast, int nslow,
+                         int in_ilo, int in_ihi, int in_jlo, int in_jhi,
+                         int out_ilo, int out_ihi, int out_jlo, int out_jhi,
+                         int permute, int *fftsize_caller,
+                         int *sendsize_caller, int *recvsize_caller)
+{
+  FFT2d *fft = (FFT2d *) ptr;
+
+  int fftsize,sendsize,recvsize;
+  fft->setup(nfast,nslow,
+             in_ilo-1,in_ihi-1,in_jlo-1,in_jhi-1,
+             out_ilo-1,out_ihi-1,out_jlo-1,out_jhi-1,
              permute,fftsize,sendsize,recvsize);
   *fftsize_caller = fftsize;
   *sendsize_caller = sendsize;
@@ -219,98 +277,28 @@ void fft2d_tune(void *ptr,
   *recvsize_caller = recvsize;
 }
 
-// ----------------------------------------------------------------------
-// 2d Remap library calls
-// ----------------------------------------------------------------------
-
 /* ----------------------------------------------------------------------
-   create an instance of a 2d Remap and return pointer to it
-   pass in MPI communicator to run on
+   tune settings for fastest FFT: collective, exchange, pack flags
+   Fortran interface where indices are 1 to N inclusive
 ------------------------------------------------------------------------- */
 
-void remap2d_create(MPI_Comm comm, void **ptr)
+void fft2d_tune_fortran(void *ptr, 
+                        int nfast, int nslow,
+                        int in_ilo, int in_ihi, int in_jlo, int in_jhi,
+                        int out_ilo, int out_ihi, int out_jlo, int out_jhi, 
+                        int permute, int *fftsize_caller, 
+                        int *sendsize_caller, int *recvsize_caller,
+                        int flag, int niter, double tmax, int tflag)
 {
-  Remap2d *remap = new Remap2d(comm);
-  *ptr = (void *) remap;
-}
+  FFT2d *fft = (FFT2d *) ptr;
 
-// ----------------------------------------------------------------------
-
-void remap2d_create_fortran(MPI_Fint fcomm, void **ptr)
-{
-  MPI_Comm ccomm = MPI_Comm_f2c(fcomm);
-  Remap2d *remap = new Remap2d(ccomm);
-  *ptr = (void *) remap;
-}
-
-/* ----------------------------------------------------------------------
-   create an instance of a 2d Remap and return pointer to it
-   caller doesn't know MPI communicator, so use MPI_COMM_WORLD
-   initialize MPI if needed
-------------------------------------------------------------------------- */
-
-void remap2d_create_no_mpi(void **ptr)
-{
-  int flag;
-  MPI_Initialized(&flag);
-
-  if (!flag) {
-    int argc = 0;
-    char **argv = NULL;
-    MPI_Init(&argc,&argv);
-  }
-
-  MPI_Comm communicator = MPI_COMM_WORLD;
-
-  Remap2d *remap = new Remap2d(communicator);
-  *ptr = (void *) remap;
-}
-
-/* ----------------------------------------------------------------------
-   destruct an instance of a 2d Remap
-------------------------------------------------------------------------- */
-
-void remap2d_destroy(void *ptr)
-{
-  Remap2d *remap = (Remap2d *) ptr;
-  delete remap;
-}
-
-/* ----------------------------------------------------------------------
-   set an internal flag, before setup()
-------------------------------------------------------------------------- */
-
-void remap2d_set(void *ptr, char *keyword, int value)
-{
-  Remap2d *remap = (Remap2d *) ptr;
-
-  if (strcmp(keyword,"collective") == 0) remap->collective = value;
-  else if (strcmp(keyword,"pack") == 0) remap->packflag = value;
-}
-
-/* ----------------------------------------------------------------------
-   create plan for performing a 2d Remap
-------------------------------------------------------------------------- */
-
-void remap2d_setup(void *ptr,
-                   int in_ilo, int in_ihi, int in_jlo, int in_jhi,
-                   int out_ilo, int out_ihi, int out_jlo, int out_jhi,
-                   int nqty, int permute, int memoryflag,
-                   int *sendsize, int *recvsize)
-{
-  Remap2d *remap = (Remap2d *) ptr;
-  remap->setup(in_ilo,in_ihi,in_jlo,in_jhi,
-               out_ilo,out_ihi,out_jlo,out_jhi,
-               nqty,permute,memoryflag,sendsize,recvsize);
-}
-
-/* ----------------------------------------------------------------------
-   perform a 2d Remap
-------------------------------------------------------------------------- */
-
-void remap2d_remap(void *ptr, FFT_SCALAR *in, FFT_SCALAR *out,
-                   FFT_SCALAR *sendbuf, FFT_SCALAR *recvbuf)
-{
-  Remap2d *remap = (Remap2d *) ptr;
-  remap->remap(in,out,sendbuf,recvbuf);
+  int fftsize,sendsize,recvsize;
+  fft->tune(nfast,nslow,
+            in_ilo-1,in_ihi-1,in_jlo-1,in_jhi-1,
+            out_ilo-1,out_ihi-1,out_jlo-1,out_jhi-1,
+            permute,fftsize,sendsize,recvsize,
+            flag,niter,tmax,tflag);
+  *fftsize_caller = fftsize;
+  *sendsize_caller = sendsize;
+  *recvsize_caller = recvsize;
 }

@@ -62,9 +62,6 @@ class FFT3dMPI:
     self.lib.fft3d_create.argtypes = [MPI_Comm,c_int,POINTER(c_void_p)]
     self.lib.fft3d_create.restype = None
 
-    self.lib.fft3d_create_no_mpi.argtypes = [c_int,POINTER(c_void_p)]
-    self.lib.fft3d_create_no_mpi.restype = None
-
     self.lib.fft3d_destroy.argtypes = [c_void_p]
     self.lib.fft3d_destroy.restype = None
 
@@ -139,8 +136,7 @@ class FFT3dMPI:
     # NOTE: allow None for MPI_Comm ??
     
     if not mpi4pyflag:
-      # How to handle error
-      print "Cannot pass MPI communicator w/out mpi4py package"
+      print "fftMPI: Cannot pass MPI communicator w/out mpi4py package"
       sys.exit()
     else:
       comm_ptr = MPI._addressof(comm)
@@ -312,9 +308,6 @@ class FFT2dMPI:
     self.lib.fft2d_create.argtypes = [MPI_Comm,c_int,POINTER(c_void_p)]
     self.lib.fft2d_create.restype = None
 
-    self.lib.fft2d_create_no_mpi.argtypes = [c_int,POINTER(c_void_p)]
-    self.lib.fft2d_create_no_mpi.restype = None
-
     self.lib.fft2d_destroy.argtypes = [c_void_p]
     self.lib.fft2d_destroy.restype = None
 
@@ -384,8 +377,7 @@ class FFT2dMPI:
     # NOTE: allow None for MPI_Comm ??
 
     if not mpi4pyflag:
-      # How to handle error
-      print "Cannot pass MPI communicator w/out mpi4py package"
+      print "fftMPI: Cannot pass MPI communicator w/out mpi4py package"
       sys.exit()
     else:
       comm_ptr = MPI._addressof(comm)
@@ -554,9 +546,6 @@ class Remap3dMPI:
     self.lib.remap3d_create.argtypes = [MPI_Comm,c_int,POINTER(c_void_p)]
     self.lib.remap3d_create.restype = None
 
-    self.lib.remap3d_create_no_mpi.argtypes = [c_int,POINTER(c_void_p)]
-    self.lib.remap3d_create_no_mpi.restype = None
-
     self.lib.remap3d_destroy.argtypes = [c_void_p]
     self.lib.remap3d_destroy.restype = None
 
@@ -586,7 +575,7 @@ class Remap3dMPI:
     # NOTE: allow None for MPI_Comm ??
     
     if not mpi4pyflag:
-      print "Cannot pass MPI communicator to remap3d w/out mpi4py package"
+      print "fftMPI: Cannot pass MPI communicator to remap3d w/out mpi4py package"
       sys.exit()
     else:
       comm_ptr = MPI._addressof(comm)
@@ -668,9 +657,6 @@ class Remap2dMPI:
     self.lib.remap2d_create.argtypes = [MPI_Comm,c_int,POINTER(c_void_p)]
     self.lib.remap2d_create.restype = None
 
-    self.lib.remap2d_create_no_mpi.argtypes = [c_int,POINTER(c_void_p)]
-    self.lib.remap2d_create_no_mpi.restype = None
-
     self.lib.remap2d_destroy.argtypes = [c_void_p]
     self.lib.remap2d_destroy.restype = None
 
@@ -699,7 +685,7 @@ class Remap2dMPI:
     # NOTE: allow None for MPI_Comm ??
     
     if not mpi4pyflag:
-      print "Cannot pass MPI communicator to remap2d w/out mpi4py package"
+      print "fftMPI: Cannot pass MPI communicator to remap2d w/out mpi4py package"
       sys.exit()
     else:
       # NOTE: this needs to be logic for MPI_Comm, not pointer

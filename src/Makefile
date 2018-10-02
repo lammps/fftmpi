@@ -19,14 +19,18 @@ SHLIBFLAGS =	-shared
 
 LIB2D =   libfft2dmpi.a
 SHLIB2D = libfft2dmpi.so
-SRC2D =	fft2d.cpp remap2d.cpp fft2d_wrap.cpp memory.cpp error.cpp
-INC2D =	ffttype.h fft2d.h remap2d.h pack2d.h fft2d_wrap.h memory.h error.h
+SRC2D =	fft2d.cpp remap2d.cpp fft2d_wrap.cpp remap2d_wrap.cpp \
+	memory.cpp error.cpp
+INC2D =	ffttype.h fft2d.h remap2d.h pack2d.h fft2d_wrap.h remap2d_wrap.h \
+	memory.h error.h
 OBJ2D = $(SRC2D:.cpp=.o)
 
 LIB3D =   libfft3dmpi.a
 SHLIB3D = libfft3dmpi.so
-SRC3D =	fft3d.cpp remap3d.cpp fft3d_wrap.cpp memory.cpp error.cpp
-INC3D =	ffttype.h fft3d.h remap3d.h pack3d.h fft3d_wrap.h memory.h error.h
+SRC3D =	fft3d.cpp remap3d.cpp fft3d_wrap.cpp remap3d_wrap.cpp \
+	memory.cpp error.cpp
+INC3D =	ffttype.h fft3d.h remap3d.h pack3d.h fft3d_wrap.h remap2d_wrap.h \
+	memory.h error.h
 OBJ3D = $(SRC3D:.cpp=.o)
 
 # memory, 1d FFT, precision settings
@@ -62,18 +66,17 @@ all:	shlib lib
 
 help:
 	@echo 'make                default = lib, KISS 1d fft, double precision'
-	@echo 'make lib            build static fftMPI libs: 2d and 3d'
-	@echo 'make shlib          build shared fftMPI libs: 2d and 3d'
+	@echo 'make lib            build 2 static fftMPI libs: 2d and 3d'
+	@echo 'make shlib          build 2 shared fftMPI libs: 2d and 3d'
 	@echo 'make all            build 4 fftMPI libs: lib and shlib'
-	@echo 'make lib2d          build static 2d fftMPI lib
-	@echo 'make lib3d          build static 3d fftMPI lib
-	@echo 'make shlib2d        build shared 2d fftMPI lib
-	@echo 'make shlib3d        build shared 3d fftMPI lib
+	@echo 'make lib2d          build static 2d fftMPI lib'
+	@echo 'make lib3d          build static 3d fftMPI lib'
+	@echo 'make shlib2d        build shared 2d fftMPI lib'
+	@echo 'make shlib3d        build shared 3d fftMPI lib'
 	@echo 'make ... fft=fftw   build with FFTW3 (FFTW), FFTW2, MKL 1d ffts'
 	@echo 'make ... p=single   build for single precision'
 	@echo 'make clean          remove all *.o files'
 	@echo 'make clean-all      remove *.o and lib files'
-	@echo 'make tar            create a tarball, 2 levels up'
 
 lib2d:
 	$(MAKE) clean
@@ -108,10 +111,6 @@ clean:
 
 clean-all:
 	@rm -f *.o *.pyc lib*.a lib*.so
-
-tar:
-	cd ../..; tar cvf cslib.tar cslib/README cslib/LICENSE \
-		cslib/doc cslib/src cslib/test
 
 # rules
 

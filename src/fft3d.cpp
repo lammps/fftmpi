@@ -32,6 +32,12 @@ using namespace FFTMPI_NS;
 #define NFACTOR 50
 #define BIG 1.0e20
 
+#ifdef FFT_LONGLONG_TO_LONG
+#define MPI_FFT_BIGINT MPI_LONG
+#else
+#define MPI_FFT_BIGINT MPI_LONG_LONG
+#endif
+
 typedef int64_t bigint;
 
 /* ----------------------------------------------------------------------
@@ -230,6 +236,24 @@ void FFT3d::setup(int user_nfast, int user_nmid, int user_nslow,
   if (!prime_factorable(nfast)) error->all("Invalid nfast");
   if (!prime_factorable(nmid)) error->all("Invalid nmid");
   if (!prime_factorable(nslow)) error->all("Invalid nslow");
+
+  // error checks in indices and tiling
+
+  flag = 0;
+  if (in_ilo > in_ihi+1 || in_jlo > in_jhi+1 || in_klo > in_khi+1) flag = 1;
+  if (in_ilo < 0 || in_jlo < 0 || in_klo < 0) flag = 1;
+  if (in_ihi >= nfast || in_jhi >= nmid || in_khi >= nslow) flag = 1;
+
+  MPI_Allreduce(&flag,&allflag,1,MPI_INT,MPI_MAX,world);
+
+  if (allflag) error->all("FFT setup in/out indices are invalid");
+
+  bigint n = (bigint) (in_ihi-in_ilo+1) * (in_jhi-in_jlo+1) * (in_khi-in_klo+1);
+  bigint nall;
+  MPI_Allreduce(&n,&nall,1,MPI_FFT_BIGINT,MPI_SUM,world);
+
+  if (nall != ((bigint) nfast * nmid*nslow))
+    error->all("FFT setup in/out indices do not tile grid");
 
   // set collective flags for different remap operations
   // bp = brick2pencil or pencil2brick, pp = pencel2pencil
@@ -489,6 +513,8 @@ void FFT3d::deallocate_setup()
 void FFT3d::setup_memory(FFT_SCALAR *user_sendbuf, FFT_SCALAR *user_recvbuf)
 {
   if (!setupflag) error->all("Cannot setup FFT memory before setup");
+  if (memoryflag) error-> all("Cannot setup FFT memory with memoryflag set");
+
   setup_memory_flag = 1;
   sendbuf = user_sendbuf;
   recvbuf = user_recvbuf;
