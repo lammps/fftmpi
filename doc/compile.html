@@ -5,43 +5,65 @@
 </H3>
 <P>From the src directory, simply type 
 </P>
-<PRE>make 
+<PRE>% make 
 </PRE>
-<P>This should build the library, so long as you have MPI installed and
+<P>This should build fftMPI, so long as you have MPI installed and
 available in your path.  The standard Makefile uses mpicxx for
-compiling and linking.  The resulting library file is libfft.a.
-There are also several Makefile.machine files provided that
-work on different machines.  You can use one of them or
-created your own edited file and invoke it as
+compiling, using whatever C++ compiler it wraps.  By default, two
+static library are created, for 2d and 3d FFTs: libfft2dmpi.a
+and libfft3dmpi.a.  
 </P>
-<PRE>make -f Makefile.machine 
+<P>There are also a few provided Makefile.machine files that work on
+different supercomputers.  You can use one of them or create your own
+edited file and invoke it as
+</P>
+<PRE>% make -f Makefile.machine 
 </PRE>
-<P>You should only need to edit the "compiler/linker settings"
-section at the top of the Makefile.
+<P>You should only need to edit the "compiler/linker settings" section at
+the top of any Makefile.machine.
 </P>
-<P>There are 2 options that can be set via the make command, via
-the "fft" and/or "p" variables:
+<HR>
+
+<P>By default, fftMPI is built to use the provided KISS FFT library for
+1d FFTs.  And by default it computes double-precision FFTs (one
+complex datum = 2 64-bit floating point values).  Two make options
+will change those settings.  You can add either or both the "p" and
+"fft" variables to any make command:
 </P>
-<PRE>make fft=FFT1d p=PRECISION 
-</PRE>
-<P>The "fft" variable determines which 1d FFT library is used.  The
-options for "FFT1d" are FFTW, FFTW3, FFTW2, MKL, or KISS, in either
-lower- or upper-case.  FFTW is the same as FFTW3.  KISS is the
-default, if "fft" is not specified.
+<P>% make p=single         # single precision, p=double is default
+% make fft=fftw         # use the FFTW3 lib for 1d FFTs
+                        # options: fftw, fftw3, fftw2, mkl, kiss (default)
+% make lib              # build only 2 static libs (2d and 3d)
+% make shlib fft=mkl    # build only 2 shared libs
+# make all              # build both static and shared libs
+% make help             # see syntax for all options
 </P>
-<P>If you specify FFTW2 or FFTW3 or MKL the Makefile assumes the
-directories for their respective include files are in your path.
-These files are fftw.h or sfftw.h for double/single precision for
-FFTW2, fftw3.h for FFTW3, and mkl_dfti.h for MKL.  The KISS library
-(kissfft.h) is included in the src dir.
+<P>The shared library build will create libfft2dmpi.so and
+libfft3dmpi.so.  The fftw setting is the same as fftw3.
+</P>
+<P>Note that the Makefile assumes the source directory for the 1d FFT
+library you select is in your path, so that it can find the
+appropriate include file.  These files are fftw.h or sfftw.h for
+double/single precision for FFTW2, fftw3.h for FFTW3, and mkl_dfti.h
+for MKL.  The KISS library kissfft.h file is included in the src dir.
 </P>
 <P>If the appropriate include file is not found, you will need to add a
-setting for the directory to FFT_INC in the Makefile, something like
--I/home/me/include.
+setting for its directory to FFT_INC in the Makefile, something like
+-I/home/me/pathforFFTW3/include.
 </P>
-<P>The "p" variable determines whether double or single precision FFTs
-are performed.  The options for PRECISION are single or double, in
-either lower- or upper-case.  Double is the default, if "p" is not
-specified.
+<HR>
+
+<P>You may wish to install both the fftMPI header files and library files
+in a location where your system can easily find them, e.g. under
+/usr/local.  This can be particulary useful for *.so shared library
+files, since your LD_LIBRARY_PATH environment variable is often
+already set to look in this location.
+</P>
+<PRE>cd fftmpi/src
+cp fft3d.h fft3d_wrap.h /usr/local/include      # include files, ditto for 2d
+cp libfft2dmpi.a libfft2dmpi.so /usr/local/lib  # library files, ditto for 2d 
+</PRE>
+<P>Note that you typically need super-user or sudo priveleges to copy
+files into these dirs.
 </P>
 </HTML>

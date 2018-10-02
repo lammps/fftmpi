@@ -1,115 +1,173 @@
 "fftMPI documentation"_Manual.html
 
-Data layout :h3
+Data layout and optimization :h3
 
-Caller owns FFT grid data.
+To use fftMPI, an application (app) defines one or more 2d or 3d FFT
+grids.  The data on these grids is owned by the app and distributed
+across the processors it runs on.  To compute an FFT, each processor
+passes a pointer to the memory which stores its portion of the input
+grid point values.  It also passes a pointer to where it wants the
+output FFT values stored.  The two pointers can be identical to
+perform an in-place FFT.  See the "compute() method
+API")_api_compute.html for more details.
 
-How complex values are stored.
+As explained on the "intro"_intro.html doc page, for fftMPI the 2d or
+3d FFT grid data is distributed across processors via a "tiling".
+Imagine a N1 x N2 or N1 x N2 x N3 grid partitioned into P tiles, where
+P is the number of MPI tasks (processors).  Each tile is a "rectangle"
+of grid points in 2d or "brick" of grid points in 3d.  Each
+processor's tile can be any size or shape, including empty.  The P
+individual tiles cannot overlap; their union is the entire grid.  This
+means each point of the global FFT grid is owned by a unique
+processor.
 
-Data for FFT grid is owned by caller, must be contiguous as explained
-"here".
+The "setup() method API"_api_setup.html has arguments for each
+processor to specify the global grid size, and the bounds of its tile
+for input, and also for output.  These can be different, which is
+useful for performing a convolution operation as described below.  It
+also has arguments to specify the ordering of values within each tile
+for input, and an option to permute the ordering for output.
 
+As a concrete example, assume a global 2d FFT grid is 100x200, and a
+particular processor owns a 4x8 sub-rectangle of the 2d grid, which
+could be located anywhere within the global grid.  That processor owns
+data for 4x8 = 32 grid points.  Each point is a complex datum, with
+both a real and imaginary value.  For double-precision FFTs, each
+value is a 64-bit floating point number.  For single-precision FFTS,
+it is a 32-bit floating point number.  This processor thus stores 32
+complex datums or 64 floating point numbers.  For double precision,
+this would be 8*64 = 512 bytes of grid data.
 
-Each array element that is input/output to/from the FFT methods is a
-complex value.  For double-precision FFTs, a complex value must be
-stored as two contiguous 64-bit doubles (real and imaginary).  For
-single-precision FFTs it is two contiguous 32-bit floats.  Thus for
-double-precision FFTs, if a processor owns 1024 values in its
-subsection of a 2d or 3d array, it would allocate space for 2048
-contiguous doubles to store its values.
+The processor must store its 64 values contiguously in memory as
+follows, where R/I are the real/imaginary pair of values for one
+complex datum:
 
-Before giving details on how to use the library, we discuss data
-layout across processors and within a processor's memory.  Consider 2d
-and 3d arrays which are input to and output by 2d and 3d FFT and remap
-operations.  For parallel efficiency, an application may choose to
-distribute an array across processors in a variety of ways.  The FFT
-and remap operations allow specification of how an array is mapped to
-processors on input and also on output.  The two mappings can be the
-same or different.  The only requirement for a mapping is that each
-processor own a contiguous block-shaped subsection of the 2d or 3d
-array.  In 2d this is a rectangular-shaped section of the 2d array; in
-3d this is a brick-shaped section of the 3d array.  Or in array
-notation, each processor must own a subsection (ilo:ihi,jlo:jhi) of
-the global 2d array and similarly for 3d arrays.  Note that each array
-value (FFT grid point) must be uniquely owned by a single processor;
-the union of all subsections thus tiles the entire array.
+R1, I1, R2, I2, ... R63, I63, R64, I64 :pre
 
-On each processor, the array values for its subsection must be stored
-contiguously in memory with a fast-varying index, a mid-varying index
-(for 3d), and a slow-varying index.  The FFT library does not know or
-care which indices correspond to which spatial dimensions (x,y,z); it
-treats the data as effectively a 1d vector and only needs to know
-which 2d or 3d indices vary fastest or slowest.  This means the
-library can be passed either C-style (last index varies fastest) or
-Fortran-style (first index varies fastest) arrays.  The caller simply
-specifies the fast, mid, and slow indices in different orders for the
-two cases.  It also means that C-style arrays of pointers to pointers
-are not allowed as arguments, unless they store the underlying 2d or
-3d data contiguous in memory.  In which case, the address of the
-underlying data is passed, not the top-level pointer.
+Conceptually the FFT grid is a 2d matrix, and the values can be
+ordered one of two ways.  With the row-index varying fastest and the
+column-index slowest, or vice versa:
 
+# row-index fastest
+R(1,1), I(1,1), R(2,1), I(2,1), ... R(4,1), I(4,1), R(1,2), I(1,2), ... R(4,8), I(4,8)
+# column-index fastest
+R(1,1), I(1,1), R(1,2), I(1,2), ... R(1,8), I(1,8), R(2,1), I(2,1), ... R(4,8), I(4,8) :pre
 
-The FFT and remap routines allow the option of permuting the order of
-the fast, mid, and slow indices on output. For example, in a 2d FFT, a
-processor can own data in row-wise ordering on input to the FFT and in
-column-wise ordering on output.
+The calling app chooses which ordering by specifying which dimension
+of the 100x200 grid is fast-varying and which is slow-varying.  The
+fftMPI library does NOT know or care which indices correspond to
+spatial dimensions x or y, but only which is the fast index and which
+is the slow index.  The ordering must be the same on all processors.
 
-It is also permissible for a particular processor to own no data on
-input and/or output, e.g. if there are more processors than grid
-points in a particular dimension.  In this case the processor
-subsection is input as (ilo:ihi,jlo:jhi) with ilo > ihi and/or jlo >
-jhi.
+The same logic applies to 3d FFTs.  There are 6 possible orderings for
+each processor's input data.  One index is specified as fast-varying,
+a 2nd as mid-varying, and the 3rd as slow-varying.  It does NOT matter
+which indices correspond to spatial dimensions x or y or z.
 
-Here are examples of data layouts that the FFT and remap methods
-allow:
+Note that this means the fftMPI library can be passed either C-style
+or Python Numpy arrays (last index varies fastest) or Fortran-style
+arrays (first index varies fastest), so long as the underlying array
+data is stored contiguously.  Here are examples array allocations for
+a 3d double-precision FFT with nfast = 300, nmid = 200, nslow = 100:
 
-* Each processor initially owns a few rows (or columns) of a 2d or
-  planes of a 3d array and the transformed data is returned in the
-  same layout.
+C or C++:
 
-* Each processor initally owns a few rows of a 2d array or planes or
-  pencils of a 3d array.  To save communication inside the FFT, it is
-  returned with each processor owning a few columns (2d) or planes or
-  pencils in a different dimension (3d).  Then a convolution can be
-  performed by the application, followed by an inverse FFT that
-  returns the data to its original decomposition.
+double grid[100][200][300][2];
+double grid[100][200][600]; :pre
 
-* Each processor initially owns a 2d or 3d subsection of the grid
-  (rectangles or bricks) and the transformed data is returned in the
-  same layout. Or it could be returned in a column-wise or pencil
-  layout as in the previous convolution example.
+Fortran:
+
+real(8), dimension(2,300,200,100) grid
+real(8), dimension(600,200,100) grid :pre
+
+Python:
+
+grid = numpy.zeros([100,200,300,2],np.float64) 
+grid = numpy.zeros([100,200,600],np.float64) :pre
+
+Note that each grid point stores a (real,imaginary) pair of values in
+consecutive memory locations.  So the arrays can be defined as 4d
+where dim=2 varies fastest, or 3d where the nfast dim=300 is doubled.
+
+Finally, as mentioned above, a permuted ordering can be specified for
+output of the FFT.  For example, for a 2d FFT, all processors can own
+data in row-wise ordering on input, and in column-wise ordering on
+output.  See the discussion of a convolution operation below.
+
+Here are a few other points worth mentioning:
+
+C-style arrays of pointers to pointers cannot be passed to fftMPI,
+unless the underlying data is contiguous in memory.  In which case the
+address of the first datum must be passed to fffMPI.  The library
+treats the data as a 1d vector. :l
 
 What is NOT allowed in a data layout is for a procsesor to own a
-scattered or random set of rows, columns, array subsections, or array
-values. Such a data distribution might be natural, for example, in a
-torus-wrap mapping of a matrix to processors.  If this is the case in
-your application, you will need to write your own remapping method
-that puts the data in an acceptable layout for input to the FFT or
-remap operations.
+scattered or random set of rows, columns, grid sub-sections, or
+individual grid points of a 2d or 3d grid.  Such a data distribution
+might be natural, for example, in a torus-wrap mapping of a 2d matrix
+to processors.  If this is the case in your app, you will need to
+write your own remapping method that puts the data in an acceptable
+layout for input to fftMPI. :l
 
-While the FFT routines allow for a wide variety of input and output
-data layouts, they work fastest with layouts directly usable by the
-parallel FFTs, without additional remappings being necessary. This is
-discussed in the optimization section.
+It's OK for a particular processor to own no data on input and/or
+output.  E.g. if there are more processors than grid points in a
+particular dimension.  In this case the processor subsection in 2d is
+input as (ilo:ihi,jlo:jhi) with ilo > ihi and/or jlo > jhi.  Similarly
+in 3d. :l,ule
 
+Here are examples of data layouts that fftMPI allows:
 
-Optimization :h3
+Each processor initially owns a few rows (or columns) of a 2d grid or
+planes of a 3d grid and the transformed data is returned in the same
+layout. :ulb,l
 
-As noted above, communication cost in the FFTs can be minimized by
-choosing appropriate input and output data layouts.  For both 2d and
-3d FFTs an optimal input layout is one where each processor already
-owns the entire fast-varying dimension of the data array and each
-processor has (roughly) the same amount of data.  In this case, no
-initial remapping of data is required; the first set of 1d FFTs can be
-performed immediately.
+Each processor initally owns a few rows of a 2d array or planes or
+pencils of a 3d array.  To save communication inside the FFT, the
+output layout is different, with each processor owning a few columns
+(2d) or planes or pencils in a different dimension (3d).  Then a
+convolution can be performed by the application after the forward FFT,
+followed by an inverse FFT that returns the data to its original
+layout. :l
 
-Similarly, an optimal output layout is one where each proc owns the
-entire slow-varying dimension and again (roughly) the same amount of
-data.  Additionally it is one where the permutation is specified as 1
-for 2d and as 2 for 3d.  In this case, no final remapping of data is
-required; the data is simple left in the layout used for the final set
-of 1d FFTs.
+Each processor initially owns a 2d or 3d subsection of the grid
+(rectangles or bricks) and the transformed data is returned in the
+same layout. Or it could be returned in a column-wise or pencil layout
+as in the convolution example of the previous bullet. :l,ule
+
+:line
+
+Optimization of data layouts :h4
+
+As explained on the "intro"_intro.html doc page, a 2d FFT for a N1 x
+N2 grid is performed as a set of N2 1d FFTs in the first dimension,
+followed by N1 1d FFTs in the 2nd dimension.  A 3d FFT for a N1 x N2 x
+N3 grid is performed as N2*N3 1d FFTs in the first dimension, then
+N1*N3 1d FFTs in the 2nd, then N1*N2 1d FFTs in the third dimension.
+
+In the context of the discussion above, this means the 1st set of 1d
+FFTs is performed in the fast-varying dimension, and the last set of
+1d FFTs is performed in the slow-varying dimension.  For 3d FFTs, the
+middle set of 1d FFTs is performed in the mid-varying dimension.
+
+While fftMPI allows for a variety of input and output data layouts, it
+will run fastest when the input and outputs layout do not require
+additional data movement before or after performing an FFT.
+
+For both 2d and 3d FFTs an optimal input layout is one where each
+processor already owns the entire fast-varying dimension of the data
+array and each processor has (roughly) the same amount of data.  In
+this case, no initial remapping of data is required; the first set of
+1d FFTs can be performed immediately.
+
+Similarly, an optimal output layout is one where each processor owns
+the entire slow-varying dimension and again (roughly) the same amount
+of data.  Additionally it is one where the permutation is specified as
+1 for 2d and as 2 for 3d, so that what was originally the slow-varying
+dimension is now the fast-varying dimension (for the last set of 1d
+FFTs).  In this case, no final remapping of data is required; the data
+can be left in the layout used for the final set of 1d FFTs.  This is
+a good way to perform the convolution operation explained above.
 
 Note that these input and output layouts may or may not make sense for
-a specific application.  But using either or both of them will reduce
-the cost of the FFT operation.
+a specific app.  But using either or both of them will reduce the cost
+of the FFT operation.

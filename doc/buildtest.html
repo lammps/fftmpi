@@ -1,7 +1,7 @@
 <HTML>
 <P><A HREF = "Manual.html">fftMPI documentation</A>
 </P>
-<H3>Compiling the test programs 
+<H3>Building the test programs 
 </H3>
 <P>The test directory has several programs that illustrate how to use
 fftMPI.  They can also be used to benchmark its performance.  These
@@ -12,63 +12,93 @@ files invoke 3d FFTs.
 <LI>test3d_f90.f90 : use fftMPI thru its Fortran interface 
 <LI>test3d.py : use fftMPI thru its Python interface 
 </UL>
-<P>And likewise for the test2d* files which invoke 2d FFTs.
+<P>Likewise for the test2d* files which invoke 2d FFTs.
 </P>
-<P>You can build all the test programs from the test directory, by
+<P>You can build all the test programs (apps) from the test directory, by
 typing:
 </P>
-<PRE>make 
-</PRE>
-<P>The standard Makefile uses mpicxx for compiling and linking the C++ and C
-programs, and mpifort for the Fortran 90 programs.  If your MPI
-installation does not include Fortran support, then you will not have
-an mpifort and the Fortran test programs will not build.
-</P>
-<P>There are also several Makefile.machine files provided that work on
-different machines.  You can use one of them or create your own edited
-file and invoke it as
-</P>
-<PRE>make -f Makefile.machine 
+<PRE>% make 
 </PRE>
 <P>The resulting executables are
 </P>
 <UL><LI>C++: test3d and test2d
 <LI>C: test3d_c and test2d_c
-<LI>F90: test3d_f90 and test2d_f90 
+<LI>F90: test3d_f90 and test2d_f90
+<LI>Python: test3d.py (no build necessary) 
 </UL>
-<P>You can build an individual test program by including its name as the
-target, e.g.
+<P>The standard Makefile uses mpicxx for compiling and linking the C++
+and C programs, and mpifort for the Fortran 90 programs, using
+whatever C++ and Fortran compilers they wrap.  If your MPI
+installation does not include Fortran support, then you will not have
+an mpifort and the Fortran test programs will not build.
 </P>
-<PRE>make test2d 
-</PRE>
-<P>As with the library, there are 2 options that can be set via the make
-command, via the "fft" and/or "p" variables:
+<P>There are also a few provided Makefile.machine files that work on
+different supercomputers.  You can use one of them or create your own
+edited file and invoke it as
 </P>
-<PRE>make fft=FFT1d p=PRECISION 
+<PRE>% make -f Makefile.machine 
 </PRE>
-<P>IMPORTANT NOTE: You must use the same values for these two variables
-as were used when building the library in the src directory.  For the
-"fft" variable this is to insure the build of the calling program
-links to the appropriate 1d FFT library, e.g. FFTW2 or MKL.  For the
-"p" variable this is to insure the single- or double-precision data
-types used in the calling program for the FFT data match what the
-library uses.  If you do not use the same variable settings,
+<P>You should only need to edit the "compiler/linker settings" section at
+the top of any Makefile.machine.
+</P>
+<HR>
+
+<P>As with the <A HREF = "compile.html">fftMPI library build</A>, there are 2 options
+for precision and a choice of 1d FFT library, that can be set in the
+make command, via the "p" and "fft" variables.  You can set either or
+both variables in a single make command:
+</P>
+<P>% make p=single            # single precision, p=double is default
+% make fft=fftw            # use the FFTW3 lib for 1d FFTs
+                           # options: fftw, fftw3, fftw2, mkl, kiss (default)
+% make test2d p=single     # build just the C++ test2d app
+% make test3d_f90 fft=mkl  # build just the Fortran test3d app
+% make help                # see syntax for all options
+</P>
+<P>The fftw setting is the same as fftw3.
+</P>
+<P>IMPORTANT NOTE: You must use the same values for the "p" and "fft"
+variables as were used when building the fftMPI library in the src
+directory.  For the "p" variable this insures the single- or
+double-precision data types used in the calling program for the FFT
+grid data match what the library uses.  For the "fft" variable this
+insures the calling program links to the appropriate 1d FFT library,
+e.g. FFTW2 or MKL.  If you do not use the same variable settings,
 compile-time errors or a run-time error message will be generated.
-See additional comments in <A HREF = "#use">Using the library from your program</A>
-for how to insure this consistency when using the library with your
-program.
+See additional comments on the <A HREF = "#usage.html">Using the library from your
+program</A> doc page for how to insure this consistency when
+using the library from your program.
 </P>
-<P>NOTE: fft also needed when using C++ classes, to find the right
-include file, so -I settings discussed above also needed??
+<P>The Makefile has two variables FFT_INC and FFT_PATH which point to the
+fftMPI src dir.  This is so the test apps can find the fftMPI header
+files and library files created when you compiled fftMPI.  If you use
+fftMPI from your own program, built in another location, you will need
+to either install fftMPI in a standard place (e.g. under /usr/local),
+or you will need settings like for these variables to point to your
+fftMPI src directory.
 </P>
-<P>The Makefile assumes the directories for the respective 1d FFT
-libraries are in your LD_LIBRARY_PATH, as defined in your environment.
-These libraries are libfftw.a for FFTWs, libfftw3.a or libfftw3f.a for
-double/single precision for FFTW3, libmkl_intel_lp64.a and
-libmkl_sequential.a and libmkl_core.a for MKL built with the Intel
-compiler, and libmkl_gf_lp64.a and libmkl_sequential.a and
-libmkl_core.a for MKL built with the g++ compiler.  If the appropriate
-library is not found, you will need to add a setting for the directory
-to FFT_PATH in the Makefile, something like -L/home/me/lib.
+<P>The Makefile also assumes the library file for the 1d FFT library you
+select is in your LD_LIBRARY_PATH, as defined in your environment, so
+that it can link to the library correctly.  These libraries are
+as follows:
+</P>
+<UL><LI>FFTW2: libfftw.a
+<LI>FFTW3 double precision: libfftw3.a
+<LI>FFTW3 single precision: libfftw3f.a
+<LI>MKL built with Intel compiler: libmkl_intel_lp64.a, libmkl_sequential.a, libmkl_core.a 
+<LI>MKL built with GNU compiler: libmkl_gf_lp64.a, libmkl_sequential.a, libmkl_core.a
+<LI>KISS: only an include file (no library file) 
+</UL>
+<P>If the appropriate library file is not found, you will need to add a
+setting for the its directory to FFT_PATH in the Makefile, something
+like -L/home/me/pathforMKL/lib.
+</P>
+<P>You can also use shared library (*.so) versions of these files.  This
+requires that those files exist on your system (e.g. you built FFTW as
+a shared library) and that your system can find those files at run
+time to load them.  This requires that your LD_LIBRARY_PATH
+environment variable includes the path for these 1d FFT libraries.
+See the <A HREF = "usage.html">usage</A> doc page for details on how to augment the
+LD_LIBRARY_PATH variable if needed with new directories.
 </P>
 </HTML>

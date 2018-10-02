@@ -1,64 +1,229 @@
 <HTML>
 <P><A HREF = "Manual.html">fftMPI documentation</A>
 </P>
-<H3>Using the library from your program 
+<H3>Using the fftMPI library from your program 
 </H3>
-<P>The discussion in this section and the following C++, C, Fortran
-sections assumes the program is performing 3d FFTs.  Just change 3d to
-2d for programs that perform 2d FFTs.
+<P>The test apps in the test dir are examples of how to use fftMPI from
+C++, C, Fortran, and Python.  The details are summarized here for
+performing 3d FFTs.  Just change "3" to "2" to perform 2d FFTs.  You
+can perform both 2d and 3d FFTs from the same app, by including both
+the 2d and 3d header files and linking to both the 2d and 3d library
+files.
 </P>
-<P>To use the Parallel FFT library from any program (C++, C, Fortran) the
-following steps are necessary.
+<HR>
+
+<H4>Calling fftMPI from your source code 
+</H4>
+<P>Any file that makes a call to fftMPI needs to include a header file
+that defines the fftMPI API.  These code lines also show how to
+allocate the FFT grid for single or double precision FFTs.
 </P>
-<UL><LI>Link the program with the Parallel FFT library in src/libfft.a and
-also with the 1d FFT library that corresponds to the settings made for
-1d FFTs and precision (double vs single) when the FFT library was
-built.  The latter may require a -Ldir setting in the link command.
+<P>C++: 
+</P>
+<PRE>#include "fft3d.h"
+using namespace FFTMPI_NS; 
+</PRE>
+<PRE>work = (float *) malloc(2*fftsize*sizeof(float));   // single precision
+work = (double *) malloc(2*fftsize*sizeof(double)); // double precision 
+</PRE>
+<P>The header file fft3d.h defines a typedef for FFT_SCALAR which is set
+to "float" or "double" depending on the precision you build fftMPI
+with.  So you can define the work vector to be of type FFT_SCALAR if
+you wish.
+</P>
+<P>C:
+</P>
+<PRE>#include "fft3d_wrap.h" 
+</PRE>
+<PRE>work = (float *) malloc(2*fftsize*sizeof(float));   // single precision
+work = (double *) malloc(2*fftsize*sizeof(double)); // double precision 
+</PRE>
+<P>As with C++, you can define the work vector to be of type FFT_SCALAR.
+</P>
+<P>Fortran:
+</P>
+<PRE>use iso_c_binding   ! use these lines in any subroutine that calls fftMPI
+use fft3d_wrap 
+</PRE>
+<PRE>real(4), allocatable, target :: work(:)   ! single precision 
+real(8), allocatable, target :: work(:)   ! double precision
+allocate(work(2*fftsize)) 
+</PRE>
+<P>Python:
+</P>
+<PRE>import numpy as np
+from fftmpi import FFT3dMPI 
+</PRE>
+<PRE>work = np.zeros(2*fftsize,np.float32)    # single precision
+work = np.zeros(2*fftsize,np.float)      # double precision 
+</PRE>
+<P>In all these code examples, the fftsize variable is assumed to be set
+to the total number of FFT grid points owned by a particular
+processor.  As explained on the <A HREF = "layout.html">data layout</A> doc page,
+the grid data passed to fftMPI from each processor must be a
+contiguous set of complex values.  Thus the allocations are for
+2*fftsize values, where 2 is for a "real" value, followed by an
+"imaginary value".
+</P>
+<P>As a concrete example, assume the global 3d FFT grid is 1024^3, and a
+particular processor owns a 100x200x50 sub-brick of the 3d grid, which
+could be located anywhere in the global grid.  Then its fftsize =
+100*200*50 = 1 million.  For double precision FFTs, it would allocate
+a vector of 2 million 64-bit values.  The details for how each
+processor orders values from a 3d sub-grid as a 1d vector are
+explained on the <A HREF = "layout.html">data layout</A> doc page.
+</P>
+<P>IMPORTANT NOTE: As explained on the <A HREF = "compile.html">compile</A> doc page,
+it is a compile-time choice to build fftMPI to perform either single
+or double precision FFTs.  Your application must allocate its FFT grid
+data to match the library precision setting.  You can look at the test
+apps to see how they do this in a flexible way so that the app can
+choose to perform its FFTs in either single or double precision.
+</P>
+<HR>
 
-
-<LI>Insure that the precision of data allocation for FFT grids matches the
-precision setting (double vs single) used when the FFT library was
-built.  As discussed above in the <A HREF = "#data">Data layout</A> section, this
-means allocation of doubles for double precision FFTs (2 doubles per
-complex value) and allocation of floats for single precision
-FFTs. 
+<H4>Building your app with fftMPI 
+</H4>
+<P>The header files listed above for each language
+</P>
+<UL><LI>C++: fft3d.h
+<LI>C: fft3d_wrap.h
+<LI>Fortran: fft3d_wrap.f90
+<LI>Python: fftmpi.py 
 </UL>
-<P>To use the Parallel FFT library from a C++ program, the following
-additional steps are necessary.  See the test/test3d.cpp file as an
-example:
+<P>are all in the fftMPI src directory.  When you compile your app, it
+must be able to find the appropriate header file.
 </P>
-<UL><LI>Include src/fft3d.h in program files which instantiate or call methods
-from the FFT3d class.  The compilation of these files will need to be
-able to find the include file used by the 1d FFT library specified
-when the library was built.  This may require a -Idir setting in the
-compile command. 
+<P>For C++ and C, the compile and link commands can be something like this:
+</P>
+<PRE>mpicxx -I/home/me/fftmpi/src -c test3d.cpp
+mpicxx -L/home/me/fftmpi/src test3d.o -lfft3dmpi -o test3d 
+</PRE>
+<P>where the -I and -L switches give the path to the fftMPI src dir.
+</P>
+<P>For Fortran, the fft3d_wrap.f90 file needs to be in the directory with
+your app files.  So you can copy it there, as in the test dir.  The
+compile and link commands can then be something like this:
+</P>
+<PRE>mpif90 -I/home/me/fftmpi/src -c fft3d_wrap.f90
+mpif90 -I/home/me/fftmpi/src -c test3d_f90.f90
+mpif90 -L/home/me/fftmpi/src test3d_f90.o fft3d_wrap.o -lfft3dmpi -lstdc++ -o test3d_f90 
+</PRE>
+<P>where the -I and -L switches give the path to the fftMPI src dir.
+</P>
+<P>For Python, there is no build step.  However your Python script needs
+to be able to find the fftmpi.py file at run time; see the next
+section.
+</P>
+<P>Note that if using an external 1d FFT library (FFTW or Intel MKL) then
+the link lines above also need to include the 1d FFT library.  See the
+<A HREF = "buildtest.html">buildtest</A> doc page for details on how to do this.  To
+use the provided KISS FFT library (just a header file), no additional
+link arguments are needed.
+</P>
+<HR>
 
-<LI>Add the line "using namespace FFT_NS;" at the top of the same program
-files. 
+<H4>Running your app with fftMPI 
+</H4>
+<P>If you build a C++, C, or Fortran app with a static fftMPI library
+(libfft3dmpi.a file), it should just run.
+</P>
+<P>If you build with a shared fftMPI library, then the system must be
+able to find the fftMPI library at run time.  This can be done in one
+of two ways.
+</P>
+<P>(1) You can add the fftMPI src dir to your LD_LIBRARY_PATH environment
+variable, e.g.
+</P>
+<PRE>setenv LD_LIBRARY_PATH $<I>LD_LIBRARY_PATH</I>:/home/me/fftmpi/src   # csh or tcsh
+export LD_LIBRARY_PATH=$<I>LD_LIBRARY_PATH</I>:/home/me/fftmpi/src   # bash 
+</PRE>
+<P>(2) You can "install" the fftMPI library file in a location your
+system can typically find it, such as /usr/local/lib.  See the
+<A HREF = "compile.html">compile</A> doc page for details on installing fftMPI after
+you build it.  This typically requires super-user or sudo priveleges.
+</P>
+<P>To run a Python app that uses fftMPI, two things must work.  If either
+operation doesn't work, you will get a Python run-time error.
+</P>
+<P>(a) Python finds the src/fftmpi.py file when a statement like this
+is executed:
+</P>
+<PRE>from fftmpi import FFT3dMPI 
+</PRE>
+<P>You can do this by setting the PYTHONPATH environment variable
+to include the fftMPI src dir, like this:
+</P>
+<PRE>setenv PYTHONPATH $<I>PYTHONPATH</I>:/home/sjplimp/fftmpi/src   # csh or tcsh
+export PYTHONPATH=$<I>PYTHONPATH</I>:/home/sjplimp/fftmpi/src   # bash 
+</PRE>
+<P>Or from your Python script, you can augment the search path directly:
+</P>
+<PRE>path_fftmpi = "/home/me/fftmpi/src"
+sys.path.append(path_fftmpi)
+from fftmpi import FFT3dMPI 
+</PRE>
+<P>(b) Python finds the fftMPI shared library file (libfft3dmpi.so) when
+an FFT instance is instantiated, like this:
+</P>
+<PRE>fft = FFT3dMPI(world,precision) 
+</PRE>
+<P>You do this the same as explained in (1) or (2) above, either by
+adding the fftMPI src dir to the LD_LIBRARY_PATH environment variable,
+or copying the fftMPI shared library into a directory where Python can
+find it.
+</P>
+<HR>
 
-<LI>See the section <A HREF = "#syntax_c++">Syntax for calling the library from C++</A>
-below for specifics of how to make library calls from C++. 
-</UL>
-<P>To use the Parallel FFT library from a C program, the following
-additional steps are necessary.  See the test/test3d_c.c file as an
-example:
+<H4>Running a Python app in parallel 
+</H4>
+<P>For a Python app to use fftMPI in parallel, it must pass an MPI
+communicator to fftMPI.  Such an app also typically makes MPI calls
+in the app itself to work in parallel.  To do both of these in Python,
+use the <A HREF = "http://www.mpi4py.org">mpi4py</A> Python package.
 </P>
-<UL><LI>Include src/fftlib.h in program files which call methods from the
-library C-interface. 
-
-<LI>Insure the pointer returned from fft3d_create() is stored in an 8-byte
-variable (void * pointer) by the program.  This pointer is passed in
-all subsequent calls to the library. 
-</UL>
-<P>To use the Parallel FFT library from a Fortran program, the following
-additional steps are necessary.  See the test/test3d_f90.f90 file as
-an example:
+<P>To see if mpi4y is already part of your Python type this line:
 </P>
-<UL><LI>Insure the pointer returned from fft3d_create() is stored in an 8-byte
-variable (integer or floating point) by the program. This pointer is
-passed in all subsequent calls to the library. 
-</UL>
-<P>A calling program can instantiate any of the classes, as many times as
-it wishes.
+<P>>>> from mpi4py import MPI
 </P>
+<P>If it works you should be able to run this test.py script
+like this: mpirun -np 4 python test.py
+</P>
+<PRE>from mpi4py import MPI
+world = MPI.COMM_WORLD
+me = world.rank
+nprocs = world.size
+print "Me %d Nprocs %d" % (me,nprocs) 
+</PRE>
+<P>and get 4 lines of output "Me N Nprocs 4", where N = 0,1,2,3.
+</P>
+<P>If the import fails, you need to install mpi4py in your Python.
+Here are two ways to do it.
+</P>
+<P>If you are using <A HREF = "http://www.anaconda.org">anaconda</A> for your Python
+package management, simply type the following which will download and
+install it:
+</P>
+<PRE>conda install mpi4py 
+</PRE>
+<P>If not, you can download mpi4py from its web site
+<A HREF = "http://www.mpi4py.org">http://www.mpi4py.org</A>, unpack it, and install
+it via pip:
+</P>
+<PRE>pip install mpi4py 
+</PRE>
+<P>Once installed, the test.py example script above should run.
+</P>
+<P>IMPORTANT NOTE: When mpi4py is installed in your Python, it compiles
+an MPI library (e.g. inside conda) or uses a pre-existing MPI library
+it finds on your system.  This MUST be the same MPI library that
+fftMPI is built with and links to.  If they do not match, you will
+typically get run-time MPI errors when your app runs.
+</P>
+<P>You can inspect the path to the MPI library that mpi4py uses like this:
+</P>
+<PRE>% python
+>>> import mpi4py
+>>> mpi4py.get_config() 
+</PRE>
 </HTML>
