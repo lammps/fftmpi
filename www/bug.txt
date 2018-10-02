@@ -1,0 +1,42 @@
+"fftMPI website"_fws :c
+:link(fws,index.html)
+
+:line
+
+Latest Features and Bug Fixes for fftMPI :h3
+
+This page is a continuous listing of new features and bug fixes for
+the fftMPI library.
+
+You can download the current tarball from this "download
+page"_download or from the "GitHub site"_github.  The current tarball
+and repository versions include all the features/fixes listed below.
+
+:link(download,http://www.sandia.gov/~sjplimp/download.html)
+:link(github,github.html)
+
+:line
+
+What version of fftMPI do you have? :h4,link(version)
+
+An fftMPI "version" is the date when it was released, such as 25 Oct
+2018.  The fftMPI is updated continuously.  Every time we fix a bug or
+add a feature, we release it immediately, as listed below.  Each dated
+copy of fftPMI contains all the features and bug-fixes up to and
+including that version date.  The version date is stored in the
+src/version.h file in the fftMPI distribution.  It is also in the
+fftMPI directory name created when you unpack a tarball.
+
+If you browse the HTML or PDF doc pages on the fftMPI website, they
+always describe the most current version of fftMPI. :ulb,l
+
+If you browse the HTML or PDF doc pages included in your tarball, they
+describe the version you have. :ule,l
+
+:line
+:line
+
+[1 Oct 2018]
+
+Initial public release of fftMPI.  This version supercedes earlier
+distributed beta versions.
