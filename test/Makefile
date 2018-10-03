@@ -8,7 +8,7 @@ SHELL = /bin/sh
 MPICC =		mpicxx
 MPIF90 = 	mpif90
 CCFLAGS =	-g -O3
-F90FLAGS =	-g -O3
+F90FLAGS =	-g -O3 -cpp
 LINKFLAGS =	-g
 
 # memory, precision settings

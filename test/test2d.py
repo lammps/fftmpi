@@ -309,7 +309,7 @@ def plan():
       fft.tune(nx,ny,inxlo,inxhi,inylo,inyhi,
                outxlo,outxhi,outylo,outyhi,
                permute,flag,tuneper,tunemax,tuneextra)
-    if nloop == 0: nloop = fft.get("npertrial",1,0)
+    if nloop == 0: nloop = fft.get_int("npertrial")
 
   world.Barrier()
   time2 = MPI.Wtime()
@@ -318,7 +318,7 @@ def plan():
     timesetup = time2 - time1
     timetune = 0.0
   else:
-    timesetup = fft.get("setuptime",2,0)
+    timesetup = fft.get_double("setuptime")
     timetune = time2 - time1
 
 # ----------------------------------------------------------------------
@@ -538,7 +538,7 @@ def timing():
       for i in xrange(nloop):
         fft.only_one_remap(work,work,1,3)
 
-    world.Barrier(world)
+    world.Barrier()
     time4 = MPI.Wtime()
     time_remap3 = time4 - time3
 
@@ -556,29 +556,30 @@ def timing():
   
   if me == 0:
     print "2d FFTs with %s library, precision = %s" % \
-      (fft.get("fft1d",4,1),fft.get("precision",4,1))
+      (fft.get_string("fft1d"),fft.get_string("precision"))
     print "Grid size: %d %d" % (nx,ny)
     print "  initial proc grid: %d %d" % (inpx,inpy)
     print "  x pencil proc grid: %d %d" % \
-      (fft.get("npfast1",1,0),fft.get("npfast2",1,0))
+      (fft.get_int("npfast1"),fft.get_int("npfast2"))
     print "  y pencil proc grid: %d %d" % \
-       (fft.get("npslow1",1,0),fft.get("npslow2",1,0))
+       (fft.get_int("npslow1"),fft.get_int("npslow2"))
     print "  2d brick proc grid: %d %d" % \
-       (fft.get("npbrick1",1,0),fft.get("npbrick2",1,0))
+       (fft.get_int("npbrick1"),fft.get_int("npbrick2"))
     print "  final proc grid: %d %d" % (outpx,outpy)
     
     if tuneflag:
-      ntrial = fft.get("ntrial",1,0)
-      npertrial = fft.get("npertrial",1,0)
+      ntrial = fft.get_int("ntrial")
+      npertrial = fft.get_int("npertrial")
       print "Tuning trials & iterations: %d %d" % (ntrial,npertrial)
       for i in range(ntrial):
         print "  coll exch pack 2dFFT 1dFFT remap r1 r2 r3: " + \
           "%d %d %d %g %g %g %g %g %g" % \
-          (fft.get("cflags",1,1)[i],fft.get("eflags",1,1)[i],
-           fft.get("pflags",1,1)[i],fft.get("tfft",2,1)[i],
-           fft.get("t1d",2,1)[i],fft.get("tremap",2,1)[i],
-           fft.get("tremap1",2,1)[i],fft.get("tremap2",2,1)[i],
-           fft.get("tremap3",2,1)[i])
+          (fft.get_int_vector("cflags")[i],fft.get_int_vector("eflags")[i],
+           fft.get_int_vector("pflags")[i],fft.get_double_vector("tfft")[i],
+           fft.get_double_vector("t1d")[i],fft.get_double_vector("tremap")[i],
+           fft.get_double_vector("tremap1")[i],
+           fft.get_double_vector("tremap2")[i],
+           fft.get_double_vector("tremap3")[i])
         
     if mode == 0:
       print "%d forward and %d back FFTs on %d procs" % (nloop,nloop,nprocs)
@@ -591,11 +592,11 @@ def timing():
       print "%d forward convolution FFTs on %d procs" % (nloop,nprocs)
 
     print "Collective, exchange, pack methods: %d %d %d" % \
-       (fft.get("collective",1,0),fft.get("exchange",1,0),fft.get("pack",1,0))
+      (fft.get_int("collective"),fft.get_int("exchange"),fft.get_int("pack"))
     print "Memory usage (per-proc) for FFT grid = %g MBytes" % \
       (float(gridbytes) / 1024/1024)
     print "Memory usage (per-proc) by fftMPI = %g MBytes" % \
-       (float(fft.get("memusage",3,0)) / 1024/1024)
+      (float(fft.get_int64("memusage")) / 1024/1024)
 
     if vflag: print "Max error = %g" % epsmax
     if not tuneflag: print "Initialize grid = %g secs" % (timeinit-timesetup)
