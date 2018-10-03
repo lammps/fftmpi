@@ -59,49 +59,26 @@ void fft2d_set(void *ptr, const char *keyword, int value)
 }
 
 /* ----------------------------------------------------------------------
-   get value of an internal value, return as pointer to value(s)
-   caller must cast the pointer correctly to access the value(s)
-------------------------------------------------------------------------- */
-
-void *fft2d_get(void *ptr, const char *keyword)
-{
-  FFT2d *fft = (FFT2d *) ptr;
-
-  if (strcmp(keyword,"fft1d") == 0) return (void *) fft->fft1d;
-  else if (strcmp(keyword,"precision") == 0) return (void *) fft->precision;
-  else if (strcmp(keyword,"collective") == 0) return &fft->collective;
-  else if (strcmp(keyword,"exchange") == 0) return &fft->exchange;
-  else if (strcmp(keyword,"pack") == 0) return &fft->packflag;
-  else if (strcmp(keyword,"memusage") == 0) return &fft->memusage;
-  else if (strcmp(keyword,"npfast1") == 0) return &fft->npfast1;
-  else if (strcmp(keyword,"npfast2") == 0) return &fft->npfast2;
-  else if (strcmp(keyword,"npslow1") == 0) return &fft->npslow1;
-  else if (strcmp(keyword,"npslow2") == 0) return &fft->npslow2;
-  else if (strcmp(keyword,"npbrick1") == 0) return &fft->npbrick1;
-  else if (strcmp(keyword,"npbrick2") == 0) return &fft->npbrick2;
-  else if (strcmp(keyword,"ntrial") == 0) return &fft->ntrial;
-  else if (strcmp(keyword,"npertrial") == 0) return &fft->npertrial;
-  else if (strcmp(keyword,"setuptime") == 0) return &fft->setuptime;
-  else if (strcmp(keyword,"cflags") == 0) return fft->cflags;
-  else if (strcmp(keyword,"eflags") == 0) return fft->eflags;
-  else if (strcmp(keyword,"pflags") == 0) return fft->pflags;
-  else if (strcmp(keyword,"tfft") == 0) return fft->tfft;
-  else if (strcmp(keyword,"t1d") == 0) return fft->t1d;
-  else if (strcmp(keyword,"tremap") == 0) return fft->tremap;
-  else if (strcmp(keyword,"tremap1") == 0) return fft->tremap1;
-  else if (strcmp(keyword,"tremap2") == 0) return fft->tremap2;
-  else if (strcmp(keyword,"tremap3") == 0) return fft->tremap3;
-  else return NULL;
-}
-
-/* ----------------------------------------------------------------------
    get value of an internal integer variable
 ------------------------------------------------------------------------- */
 
 int fft2d_get_int(void *ptr, const char *keyword)
 {
-  int value = *((int *) fft2d_get(ptr,keyword));
-  return value;
+  FFT2d *fft = (FFT2d *) ptr;
+
+  if (strcmp(keyword,"collective") == 0) return fft->collective;
+  else if (strcmp(keyword,"exchange") == 0) return fft->exchange;
+  else if (strcmp(keyword,"pack") == 0) return fft->packflag;
+  else if (strcmp(keyword,"npfast1") == 0) return fft->npfast1;
+  else if (strcmp(keyword,"npfast2") == 0) return fft->npfast2;
+  else if (strcmp(keyword,"npslow1") == 0) return fft->npslow1;
+  else if (strcmp(keyword,"npslow2") == 0) return fft->npslow2;
+  else if (strcmp(keyword,"npbrick1") == 0) return fft->npbrick1;
+  else if (strcmp(keyword,"npbrick2") == 0) return fft->npbrick2;
+  else if (strcmp(keyword,"ntrial") == 0) return fft->ntrial;
+  else if (strcmp(keyword,"npertrial") == 0) return fft->npertrial;
+
+  return -1;
 }
 
 /* ----------------------------------------------------------------------
@@ -110,8 +87,11 @@ int fft2d_get_int(void *ptr, const char *keyword)
 
 double fft2d_get_double(void *ptr, const char *keyword)
 {
-  double value = *((double *) fft2d_get(ptr,keyword));
-  return value;
+  FFT2d *fft = (FFT2d *) ptr;
+
+  if (strcmp(keyword,"setuptime") == 0) return fft->setuptime;
+
+  return -1.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -120,38 +100,67 @@ double fft2d_get_double(void *ptr, const char *keyword)
 
 int64_t fft2d_get_int64(void *ptr, const char *keyword)
 {
-  int64_t value = *((int64_t *) fft2d_get(ptr,keyword));
-  return value;
+  FFT2d *fft = (FFT2d *) ptr;
+
+  if (strcmp(keyword,"memusage") == 0) return fft->memusage;
+
+  return -1;
 }
 
 /* ----------------------------------------------------------------------
    get value of an internal string variable
 ------------------------------------------------------------------------- */
 
-char *fft2d_get_string(void *ptr, const char *keyword)
+char *fft2d_get_string(void *ptr, const char *keyword, int *len)
 {
-  char *value = (char *) fft2d_get(ptr,keyword);
-  return value;
+  FFT2d *fft = (FFT2d *) ptr;
+
+  if (strcmp(keyword,"fft1d") == 0) {
+    *len = strlen(fft->fft1d);
+    return (char *) fft->fft1d;
+  } else if (strcmp(keyword,"precision") == 0) {
+    *len = strlen(fft->precision);
+    return (char *) fft->precision;
+  }
+
+  return NULL;
 }
 
 /* ----------------------------------------------------------------------
    get pointer to an internal vector of ints variable
 ------------------------------------------------------------------------- */
 
-int *fft2d_get_int_vector(void *ptr, const char *keyword)
+int *fft2d_get_int_vector(void *ptr, const char *keyword, int *len)
 {
-  int *value = (int *) fft2d_get(ptr,keyword);
-  return value;
+  FFT2d *fft = (FFT2d *) ptr;
+
+  *len = fft->ntrial;
+
+  if (strcmp(keyword,"cflags") == 0) return fft->cflags;
+  else if (strcmp(keyword,"eflags") == 0) return fft->eflags;
+  else if (strcmp(keyword,"pflags") == 0) return fft->pflags;
+
+  return NULL;
 }
 
 /* ----------------------------------------------------------------------
    get pointer to an internal vector of doubles variable
 ------------------------------------------------------------------------- */
 
-double *fft2d_get_double_vector(void *ptr, const char *keyword)
+double *fft2d_get_double_vector(void *ptr, const char *keyword, int *len)
 {
-  double *value = (double *) fft2d_get(ptr,keyword);
-  return value;
+  FFT2d *fft = (FFT2d *) ptr;
+
+  *len = fft->ntrial;
+
+  if (strcmp(keyword,"tfft") == 0) return fft->tfft;
+  else if (strcmp(keyword,"t1d") == 0) return fft->t1d;
+  else if (strcmp(keyword,"tremap") == 0) return fft->tremap;
+  else if (strcmp(keyword,"tremap1") == 0) return fft->tremap1;
+  else if (strcmp(keyword,"tremap2") == 0) return fft->tremap2;
+  else if (strcmp(keyword,"tremap3") == 0) return fft->tremap3;
+
+  return NULL;
 }
 
 /* ----------------------------------------------------------------------

@@ -16,7 +16,7 @@
 import sys,traceback
 from ctypes import *
 
-# Numpy and mpi4py packages may not exist
+# Numpy and mpi4py packages must exist
 
 try:
   import numpy as np
@@ -29,7 +29,8 @@ try:
   from mpi4py import MPI
   mpi4pyflag = 1
 except:
-  mpi4pyflag = 0
+  print "fftMPI: Cannot pass MPI communicator w/out mpi4py package"
+  sys.exit()
 
 # ------------------------------------------------------------------
 # instantiate fft3dMPI thru its C-interface
@@ -132,16 +133,9 @@ class FFT3dMPI:
     # create an instance of fftMPI
 
     self.fft = c_void_p()
-
-    # NOTE: allow None for MPI_Comm ??
-    
-    if not mpi4pyflag:
-      print "fftMPI: Cannot pass MPI communicator w/out mpi4py package"
-      sys.exit()
-    else:
-      comm_ptr = MPI._addressof(comm)
-      comm_value = MPI_Comm.from_address(comm_ptr)
-      self.lib.fft3d_create(comm_value,precision,byref(self.fft))
+    comm_ptr = MPI._addressof(comm)
+    comm_value = MPI_Comm.from_address(comm_ptr)
+    self.lib.fft3d_create(comm_value,precision,byref(self.fft))
 
   # destroy instance of fftMPI
   
@@ -373,16 +367,9 @@ class FFT2dMPI:
     # create an instance of fftMPI
 
     self.fft = c_void_p()
-
-    # NOTE: allow None for MPI_Comm ??
-
-    if not mpi4pyflag:
-      print "fftMPI: Cannot pass MPI communicator w/out mpi4py package"
-      sys.exit()
-    else:
-      comm_ptr = MPI._addressof(comm)
-      comm_value = MPI_Comm.from_address(comm_ptr)
-      self.lib.fft2d_create(comm_value,precision,byref(self.fft))
+    comm_ptr = MPI._addressof(comm)
+    comm_value = MPI_Comm.from_address(comm_ptr)
+    self.lib.fft2d_create(comm_value,precision,byref(self.fft))
 
   # destroy instance of fftMPI
   
@@ -571,16 +558,9 @@ class Remap3dMPI:
     # create an instance of Remap3d
 
     self.remap = c_void_p()
-
-    # NOTE: allow None for MPI_Comm ??
-    
-    if not mpi4pyflag:
-      print "fftMPI: Cannot pass MPI communicator to remap3d w/out mpi4py package"
-      sys.exit()
-    else:
-      comm_ptr = MPI._addressof(comm)
-      comm_value = MPI_Comm.from_address(comm_ptr)
-      self.lib.remap3d_create(comm_value,precision,byref(self.remap))
+    comm_ptr = MPI._addressof(comm)
+    comm_value = MPI_Comm.from_address(comm_ptr)
+    self.lib.remap3d_create(comm_value,precision,byref(self.remap))
 
   # destroy instance of Remap3d
   
@@ -681,17 +661,9 @@ class Remap2dMPI:
     # create an instance of Remap2d
 
     self.remap = c_void_p()
-
-    # NOTE: allow None for MPI_Comm ??
-    
-    if not mpi4pyflag:
-      print "fftMPI: Cannot pass MPI communicator to remap2d w/out mpi4py package"
-      sys.exit()
-    else:
-      # NOTE: this needs to be logic for MPI_Comm, not pointer
-      comm_ptr = MPI._addressof(comm)
-      comm_value = MPI_Comm.from_address(comm_ptr)
-      self.lib.remap2d_create(comm_value,precision,byref(self.remap))
+    comm_ptr = MPI._addressof(comm)
+    comm_value = MPI_Comm.from_address(comm_ptr)
+    self.lib.remap2d_create(comm_value,precision,byref(self.remap))
 
   # destroy instance of Remap2d
   

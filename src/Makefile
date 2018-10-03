@@ -54,6 +54,30 @@ else
   PRECISION = -DFFT_DOUBLE
 endif
 
+ifeq ($(FFT),FFTW2)
+  FFT1D = -lfftw
+else ifeq ($(FFT),FFTW3)
+  ifeq ($p,single)
+    FFT1D = -lfftw3f
+  else
+    FFT1D = -lfftw3
+  endif
+else ifeq ($(FFT),FFTW)
+  ifeq ($p,single)
+    FFT1D = -lfftw3f
+  else
+    FFT1D = -lfftw3
+  endif
+else ifeq ($(FFT),MKL)
+  ifeq ($c,intel)
+    FFT1D = -L$(MKL_LIB) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+  else
+    FFT1D = -L$(MKL_LIB) -lmkl_gf_lp64 -lmkl_sequential -lmkl_core
+  endif
+else
+  FFT1D =
+endif
+
 EXTRA_INC =     $(MEM_INC) $(FFT_INC) $(PRECISION)
 
 # targets
@@ -101,10 +125,10 @@ static3d:	$(OBJ3D)
 		$(ARCHIVE) $(ARCHFLAGS) $(LIB3D) $(OBJ3D)
 
 shared2d:	$(OBJ2D)
-		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) -o $(SHLIB2D) $(OBJ2D)
+		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) -o $(SHLIB2D) $(OBJ2D) $(FFT1D)
 
 shared3d:	$(OBJ3D)
-		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) -o $(SHLIB3D) $(OBJ3D)
+		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) -o $(SHLIB3D) $(OBJ3D) $(FFT1D)
 
 clean:
 	@rm -f *.o *.pyc

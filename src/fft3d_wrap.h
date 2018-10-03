@@ -14,17 +14,16 @@ extern "C" {
 /* C interface */
 
 void fft3d_create(MPI_Comm, int, void **);
-void fft3d_create_fortran(MPI_Comm, int, void **);
+void fft3d_create_fortran(MPI_Fint, int, void **);
 void fft3d_destroy(void *);
 
 void fft3d_set(void *, const char *, int);
-void *fft3d_get(void *, const char *);
 int fft3d_get_int(void *, const char *);
 double fft3d_get_double(void *, const char *);
 int64_t fft3d_get_int64(void *, const char *);
-char *fft3d_get_string(void *, const char *);
-int *fft3d_get_int_vector(void *, const char *);
-double *fft3d_get_double_vector(void *, const char *);
+char *fft3d_get_string(void *, const char *, int *);
+int *fft3d_get_int_vector(void *, const char *, int *);
+double *fft3d_get_double_vector(void *, const char *, int *);
 
 void fft3d_setup(void *, int, int, int,
                  int, int, int, int, int, int, int, int, int, int, int, int,
