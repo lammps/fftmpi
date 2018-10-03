@@ -59,10 +59,28 @@ else
   FFT1D =
 endif
 
-
 # targets
 
-all:	clean test3d test2d test3d_c test2d_c test3d_f90 test2d_f90
+all:	clean-all tests simples
+
+tests:	test3d test2d test3d_c test2d_c test3d_f90 test2d_f90 
+
+simples: simple simple_c simple_f90
+
+help:
+	@echo 'make                default = all, KISS 1d fft, double precision'
+	@echo 'make all            build 6 full apps and 3 simple apps'
+	@echo 'make tests          build 6 full apps (2d/3d and 3 languages)'
+	@echo 'make simples        build 3 simple apps (3 languages)'
+	@echo 'make test2d         build 2d C++ app'
+	@echo 'make test3d_c       build 3d C app'
+	@echo 'make test2d_c       build 2d C app'
+	@echo 'make test3d_f90     build 3d Fortran 90 app'
+	@echo 'make test2d_f90     build 2d Fortran 90 app'
+	@echo 'make ... fft=fftw   build with FFTW3 (FFTW), FFTW2, MKL 1d ffts'
+	@echo 'make ... p=single   build for single precision'
+	@echo 'make clean          remove all *.o files'
+	@echo 'make clean-all      remove *.o and executable files'
 
 test3d:	test3d.o
 	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) test3d.o $(FFT3D_LIB) -o test3d
@@ -77,15 +95,30 @@ test2d_c:	test2d_c.o
 	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) test2d_c.o $(FFT2D_LIB) -o test2d_c
 
 test3d_f90:	fft3d_wrap.o test3d_f90.o 
-	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test3d_f90.o $(FFT3D_LIB) \
-	-lstdc++ -o test3d_f90
+	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test3d_f90.o fft3d_wrap.o \
+	$(FFT3D_LIB) -lstdc++ -o test3d_f90
 
 test2d_f90:	fft2d_wrap.o test2d_f90.o 
-	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test2d_f90.o $(FFT2D_LIB) \
-	-lstdc++ -o test2d_f90
+	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test2d_f90.o fft3d_wrap.o \
+	$(FFT2D_LIB) -lstdc++ -o test2d_f90
+
+simple:	simple.o
+	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) simple.o $(FFT3D_LIB) -o simple
+
+simple_c:	simple_c.o
+	$(MPICC) $(LINKFLAGS) $(EXTRA_PATH) simple_c.o $(FFT3D_LIB) -o simple_c
+
+simple_f90:	fft3d_wrap.o simple_f90.o 
+	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) simple_f90.o fft3d_wrap.o \
+	$(FFT3D_LIB) -lstdc++ -o simple_f90
 
 clean:
-	@rm -f *.o *.mod test3d test2d test3d_c test2d_c test3d_f90 test2d_f90
+	@rm -f *.o *.mod
+
+clean-all:
+	@rm -f *.o *.mod \
+	test3d test2d test3d_c test2d_c test3d_f90 test2d_f90 \
+	simple simple_c simple_f90
 
 # rules
 

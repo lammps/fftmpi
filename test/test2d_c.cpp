@@ -315,7 +315,7 @@ void options(int narg, char **args)
     error_all("Specified proc grid does not match nprocs");
 
   if (nloop <= 0) error_all("Invalid Nloop");
-  if (nloop == 0 && tuneflag == 0) error_all("Invalid Nloop");
+  if (nloop == 0 && tuneflag == 0) error_all("Invalid nloop");
   if (iflag == RANDOM && seed <= 0) error_all("Invalid initialize setting");
   if (mode < 0 || mode > 3) error_all("Invalid FFT mode");
   if (mode > 1 && vflag) error_all("Cannot validate forward only FFT");
@@ -763,8 +763,10 @@ void timing()
   bigint gridbytes = ((bigint) sizeof(FFT_SCALAR)) * 2*fftsize;
 
   if (me == 0) {
+    int tmp;
     printf("2d FFTs with %s library, precision = %s\n",
-           fft2d_get_string(fft,"fft1d"),fft2d_get_string(fft,"precision"));
+           fft2d_get_string(fft,"fft1d",&tmp),
+           fft2d_get_string(fft,"precision",&tmp));
     printf("Grid size: %d %d\n",nx,ny);
     printf("  initial proc grid: %d %d\n",inpx,inpy);
     printf("  x pencil proc grid: %d %d\n",
@@ -782,15 +784,15 @@ void timing()
       int ntrial = fft2d_get_int(fft,"ntrial");
       int npertrial = fft2d_get_int(fft,"npertrial");
       printf("Tuning trials & iterations: %d %d\n",ntrial,npertrial);
-      int *cflags = fft2d_get_int_vector(fft,"cflags");
-      int *eflags = fft2d_get_int_vector(fft,"eflags");
-      int *pflags = fft2d_get_int_vector(fft,"pflags");
-      double *tfft = fft2d_get_double_vector(fft,"tfft");
-      double *t1d = fft2d_get_double_vector(fft,"t1d");
-      double *tremap = fft2d_get_double_vector(fft,"tremap");
-      double *tremap1 = fft2d_get_double_vector(fft,"tremap1");
-      double *tremap2 = fft2d_get_double_vector(fft,"tremap2");
-      double *tremap3 = fft2d_get_double_vector(fft,"tremap3");
+      int *cflags = fft2d_get_int_vector(fft,"cflags",&tmp);
+      int *eflags = fft2d_get_int_vector(fft,"eflags",&tmp);
+      int *pflags = fft2d_get_int_vector(fft,"pflags",&tmp);
+      double *tfft = fft2d_get_double_vector(fft,"tfft",&tmp);
+      double *t1d = fft2d_get_double_vector(fft,"t1d",&tmp);
+      double *tremap = fft2d_get_double_vector(fft,"tremap",&tmp);
+      double *tremap1 = fft2d_get_double_vector(fft,"tremap1",&tmp);
+      double *tremap2 = fft2d_get_double_vector(fft,"tremap2",&tmp);
+      double *tremap3 = fft2d_get_double_vector(fft,"tremap3",&tmp);
       for (int i = 0; i < ntrial; i++)
         printf("  coll exch pack 2dFFT 1dFFT remap r1 r2 r3: "
                "%d %d %d %g %g %g %g %g %g\n",
@@ -810,13 +812,13 @@ void timing()
       printf("%d forward convolution FFTs on %d procs\n",nloop,nprocs);
 
     printf("Collective, exchange, pack methods: %d %d %d\n",
-           *((int *) fft2d_get(fft,"collective")),
-           *((int *) fft2d_get(fft,"exchange")),
-           *((int *) fft2d_get(fft,"pack")));
+           fft2d_get_int(fft,"collective"),
+           fft2d_get_int(fft,"exchange"),
+           fft2d_get_int(fft,"pack"));
     printf("Memory usage (per-proc) for FFT grid = %g MBytes\n",
            (double) gridbytes / 1024/1024);
     printf("Memory usage (per-proc) by fftMPI = %g MBytes\n",
-           (double) *((int64_t *) fft2d_get(fft,"memusage")) / 1024/1024);
+           (double) fft2d_get_int64(fft,"memusage") / 1024/1024);
            
     if (vflag) printf("Max error = %g\n",epsmax);
     if (!tuneflag) printf("Initialize grid = %g secs\n",timeinit-timesetup);

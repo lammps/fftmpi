@@ -7,21 +7,20 @@ SHELL = /bin/sh
 
 MPICC =		mpicxx
 MPIF90 = 	mpif90
-CCFLAGS =	-g -O3 $(PRECISION)
-F90FLAGS =	-g -O3 -cpp $(PRECISION)
+CCFLAGS =	-g -O3
+F90FLAGS =	-g -O3
 LINKFLAGS =	-g
 
-# memory, 1d FFT, precision settings
+# memory, precision settings
 
 MEM_INC =	-DFFT_MEMALIGN=64
 
-FFT_INC =       -I../src
-FFT_PATH =      -L../src
-FFT2D_LIB =     -lfft2dmpi $(FFT1D)
-FFT3D_LIB =     -lfft3dmpi $(FFT1D)
+tbb = 		yes
+TBB =		$(shell echo $(tbb) | tr a-z A-Z)
 
-EXTRA_INC =     $(MEM_INC) $(FFT_INC)
-EXTRA_PATH =    $(FFT_PATH)
+ifeq ($(TBB),NO)
+  TBB_INC = -DFFT_INTEL_NO_TBB
+endif
 
 p = 		DOUBLE
 P =       	$(shell echo $(p) | tr a-z A-Z)
@@ -32,7 +31,9 @@ else
   PRECISION = -DFFT_DOUBLE
 endif
 
-fft = 		kiss
+# 1d FFT libraries used for build with static fftMPI library
+
+#fft = 		kiss
 FFT =		$(shell echo $(fft) | tr a-z A-Z)
 
 ifeq ($(FFT),FFTW2)
@@ -58,6 +59,16 @@ else ifeq ($(FFT),MKL)
 else
   FFT1D =
 endif
+
+# variables
+
+FFT_INC =       -I../src
+FFT_PATH =      -L../src
+FFT2D_LIB =     -lfft2dmpi $(FFT1D)
+FFT3D_LIB =     -lfft3dmpi $(FFT1D)
+
+EXTRA_INC =     $(MEM_INC) $(TBB_INC) $(FFT_INC) $(PRECISION)
+EXTRA_PATH =    $(FFT_PATH)
 
 # targets
 
@@ -99,7 +110,7 @@ test3d_f90:	fft3d_wrap.o test3d_f90.o
 	$(FFT3D_LIB) -lstdc++ -o test3d_f90
 
 test2d_f90:	fft2d_wrap.o test2d_f90.o 
-	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test2d_f90.o fft3d_wrap.o \
+	$(MPIF90) $(LINKFLAGS) $(EXTRA_PATH) test2d_f90.o fft2d_wrap.o \
 	$(FFT2D_LIB) -lstdc++ -o test2d_f90
 
 simple:	simple.o

@@ -846,10 +846,10 @@ void timing()
 
     printf("Collective, exchange, pack methods: %d %d %d\n",
            fft->collective,fft->exchange,fft->packflag);
-    printf("Memory usage (per-proc) for fftMPI = %g MBytes\n",
+    printf("Memory usage (per-proc) for FFT grid = %g MBytes\n",
            (double) gridbytes / 1024/1024);
-    printf("Memory usage (per-proc) by FFT lib = %g MBytes %ld\n",
-           (double) fft->memusage / 1024/1024,fft->memusage);
+    printf("Memory usage (per-proc) by fftMPI = %g MBytes\n",
+           (double) fft->memusage / 1024/1024);
 
     if (vflag) printf("Max error = %g\n",epsmax);
     if (!tuneflag) printf("Initialize grid = %g secs\n",timeinit-timesetup);

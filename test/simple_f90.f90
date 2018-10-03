@@ -18,24 +18,24 @@ include 'mpif.h'
 
 ! data declarations
 
-INTEGER world,me,nprocs
-INTEGER i,j,k,n,PRECISION,ierr
-INTEGER NFAST_USER,NMID_USER,NSLOW_USER
+integer world,me,nprocs
+integer i,j,k,n,precision,ierr
+integer nfast_user,nmid_user,nslow_user
 integer nfast,nmid,nslow
-INTEGER npfast,npmid,npslow,npmidslow,ipfast,ipmid,ipslow
+integer npfast,npmid,npslow,npmidslow,ipfast,ipmid,ipslow
 integer ilo,ihi,jlo,jhi,klo,khi
 integer fftsize,sendsize,recvsize
-REAL*8 timestart,timestop,mydiff,alldiff
-REAL(8), ALLOCATABLE, target :: work(:)
-TYPE(C_ptr) :: fft
+real*8 timestart,timestop,mydiff,alldiff
+real(8), allocatable, target :: work(:)
+type(c_ptr) :: fft
 
-! FFT size
+! fft size
 
-NFAST_USER = 128
-NMID_USER = 128
-NSLOW_USER = 128
+nfast_user = 128
+nmid_user = 128
+nslow_user = 128
 
-! setup MPI
+! setup mpi
 
 call MPI_Init(ierr)
 world = MPI_COMM_WORLD
@@ -43,35 +43,35 @@ world = MPI_COMM_WORLD
 call MPI_Comm_size(world,nprocs,ierr)
 call MPI_Comm_rank(world,me,ierr)
 
-! instantiate FFT
+! instantiate fft
 
-PRECISION = 2
-call fft3d_create(world,PRECISION,fft)
+precision = 2
+call fft3d_create(world,precision,fft)
 
-! simple algorithm to factor Nprocs into roughly cube roots
+! simple algorithm to factor nprocs into roughly cube roots
 
 npfast = nprocs**(1.0/3.0)
 do while (npfast < nprocs)
-  IF (MOD(nprocs,npfast) == 0) exit
+  if (mod(nprocs,npfast) == 0) exit
   npfast = npfast + 1
 enddo
 
 npmidslow = nprocs / npfast
-npmid = SQRT(1.0*npmidslow)
-do WHILE (npmid < npmidslow)
-  IF (mod(npmidslow,npmid) == 0) exit
+npmid = sqrt(1.0*npmidslow)
+do while (npmid < npmidslow)
+  if (mod(npmidslow,npmid) == 0) exit
   npmid = npmid + 1
 enddo
 npslow = nprocs / npfast / npmid
 
-! partition grid into Npfast x Npmid x Npslow bricks
+! partition grid into npfast x npmid x npslow bricks
 
-nfast = NFAST_USER
-nmid = NMID_USER
-nslow = NSLOW_USER
+nfast = nfast_user
+nmid = nmid_user
+nslow = nslow_user
 
 ipfast = mod(me,npfast)
-ipmid = MOD((me/npfast),npmid)
+ipmid = mod((me/npfast),npmid)
 ipslow = me / (npfast*npmid)
 
 ilo = 1.0*ipfast*nfast/npfast + 1
@@ -81,13 +81,13 @@ jhi = 1.0*(ipmid+1)*nmid/npmid
 klo = 1.0*ipslow*nslow/npslow + 1
 khi = 1.0*(ipslow+1)*nslow/npslow
 
-! setup FFT, could replace with tune()
+! setup fft, could replace with tune()
 
 call fft3d_setup(fft,nfast,nmid,nslow, &
         ilo,ihi,jlo,jhi,klo,khi,ilo,ihi,jlo,jhi,klo,khi, &
         0,fftsize,sendsize,recvsize)
 
-! tune FFT, could replace with setup()
+! tune fft, could replace with setup()
 
 !call fft3d_tune(fft,nfast,nmid,nslow, &
 !        ilo,ihi,jlo,jhi,klo,khi,ilo,ihi,jlo,jhi,klo,khi, &
@@ -96,31 +96,31 @@ call fft3d_setup(fft,nfast,nmid,nslow, &
 ! initialize each proc's local grid
 ! global initialization is specific to proc count
 
-ALLOCATE(work(2*fftsize))
+allocate(work(2*fftsize))
 
 n = 1
-DO k = klo,khi
-  DO j = jlo,jhi
-    DO i = ilo,ihi
+do k = klo,khi
+  do j = jlo,jhi
+    do i = ilo,ihi
       work(n) = n
       n = n + 1
       work(n) = n
       n = n + 1
-    ENDDO
-  ENDDO
-ENDDO
+    enddo
+  enddo
+enddo
 
-! perform 2 FFTs
+! perform 2 ffts
 
-timestart = MPI_Wtime()
-call fft3d_compute(fft,c_loc(work),c_loc(work),1)        ! forward FFT
-CALL fft3d_compute(fft,C_LOC(work),C_LOC(work),-1)       ! inverse FFT
-timestop = MPI_Wtime()
+timestart = mpi_wtime()
+call fft3d_compute(fft,c_loc(work),c_loc(work),1)        ! forward fft
+call fft3d_compute(fft,c_loc(work),c_loc(work),-1)       ! inverse fft
+timestop = mpi_wtime()
 
 if (me == 0) then
-  PRINT *,"Two",nfast,"x",nmid,"x",nslow,"FFTs on",nprocs, &
+  print *,"Two",nfast,"x",nmid,"x",nslow,"ffts on",nprocs, &
           "procs as ",npfast,"x",npmid,"x",npslow,"grid"
-  PRINT *,"CPU time =",timestop-timestart,"secs"
+  print *,"CPU time =",timestop-timestart,"secs"
 endif
 
 ! find largest difference between initial/final values
@@ -128,25 +128,24 @@ endif
 
 n = 1
 mydiff = 0.0
-DO k = klo,khi
-  DO j = jlo,jhi
-    DO i = ilo,ihi
-      IF (abs(work(n)-n) > mydiff) mydiff = abs(work(n)-n)
+do k = klo,khi
+  do j = jlo,jhi
+    do i = ilo,ihi
+      if (abs(work(n)-n) > mydiff) mydiff = abs(work(n)-n)
       n = n + 1
-      IF (abs(work(n)-n) > mydiff) mydiff = abs(work(n)-n)
+      if (abs(work(n)-n) > mydiff) mydiff = abs(work(n)-n)
       n = n + 1
-    ENDDO
-  ENDDO
-ENDDO
+    enddo
+  enddo
+enddo
 
-CALL MPI_Allreduce(mydiff,alldiff,1,MPI_DOUBLE,MPI_MAX,world,ierr)  
-IF (me == 0) PRINT *,"Max difference in initial/final values =",alldiff
+call MPI_Allreduce(mydiff,alldiff,1,mpi_double,mpi_max,world,ierr)  
+if (me == 0) print *,"Max difference in initial/final values =",alldiff
 
 ! clean up
 
 deallocate(work)
 call fft3d_destroy(fft)
-call MPI_Finalize()
+call mpi_finalize()
 
 end program simple_f90
-
