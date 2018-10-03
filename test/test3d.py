@@ -698,12 +698,11 @@ def timing():
 
 # ----------------------------------------------------------------------
 # deallocate memory for FFT grid
+# no need to do this since Python does garbage collection
 # ----------------------------------------------------------------------
 
 def deallocate():
   pass
-  # NOTE: is there a Numpy dealloc?
-  #sfree(work)
 
 # ----------------------------------------------------------------------
 # main program
