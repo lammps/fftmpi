@@ -198,7 +198,7 @@ or "float" (32-bit) for double-precision or single-precision FFTs.
 
 C:
 
-#include "fft3d_wrap.h" :pre
+#include "remap3d_wrap.h" :pre
 
 MPI_Comm world = MPI_COMM_WORLD;
 int precision = 2; :pre
@@ -242,7 +242,7 @@ Fortran:
 
 include 'mpif.h'
 use iso_c_binding
-use fft3d_wrap :pre
+use remap3d_wrap :pre
 
 integer world,precision
 type(c_ptr) :: remap :pre

@@ -54,6 +54,10 @@ Once setup() is invoked, changing them has no effect.
 <P>The last 2 variables can be set (or changed) anytime before the
 <A HREF = "api_compute.html">compute()</A> method is called to perform an FFT.
 </P>
+<P>To set these variables from C, Fortran, Python, there is a set()
+method which needs to be called.  See syntax details in the code
+examples below.
+</P>
 <HR>
 
 <P>The "collective" variable = 0/1/2 corresponds to 3 algorithmic choices
@@ -326,8 +330,10 @@ allocate(sendbuf(sendsize))
 allocate(sendbuf(recvsize))
 fft3d_setup_memory(fft,c_loc(sendbuf),c_loc(recvbuf)) 
 </PRE>
-<P>The "in i/j/k lo/hi" indices range from 1 to N inclusive,
-where N is nfast, nmid, or nslow.
+<P>For Fortran, the "in i/j/k lo/hi" indices then range from 1 to N
+inclusive, where N is nfast, nmid, or nslow.  Unlike the other
+languages discussed on this page where the indices range from 0 to N-1
+inclusive.
 </P>
 <HR>
 

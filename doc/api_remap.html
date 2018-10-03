@@ -200,7 +200,7 @@ or "float" (32-bit) for double-precision or single-precision FFTs.
 
 <P>C:
 </P>
-<PRE>#include "fft3d_wrap.h" 
+<PRE>#include "remap3d_wrap.h" 
 </PRE>
 <PRE>MPI_Comm world = MPI_COMM_WORLD;
 int precision = 2; 
@@ -244,7 +244,7 @@ or "float" (32-bit) for double-precision or single-precision FFTs.
 </P>
 <PRE>include 'mpif.h'
 use iso_c_binding
-use fft3d_wrap 
+use remap3d_wrap 
 </PRE>
 <PRE>integer world,precision
 type(c_ptr) :: remap 
@@ -281,8 +281,10 @@ allocate(sendbuf(recvsize))
 </PRE>
 <PRE>call remap3d_remap(remap,c_loc(work),c_loc(work),c_loc(sendbuf),c_loc(recvbuf)) 
 </PRE>
-<P>The "in i/j/k lo/hi" indices range from 1 to N inclusive,
-where N is nfast, nmid, or nslow.
+<P>For Fortran, the "in i/j/k lo/hi" indices then range from 1 to N
+inclusive, where N is nfast, nmid, or nslow.  Unlike the other
+languages discussed on this page where the indices range from 0 to N-1
+inclusive.
 </P>
 <HR>
 

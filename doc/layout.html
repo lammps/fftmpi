@@ -49,8 +49,10 @@ complex datum:
 ordered one of two ways.  With the row-index varying fastest and the
 column-index slowest, or vice versa:
 </P>
-<PRE>R(1,1), I(1,1), R(2,1), I(2,1), ... R(4,1), I(4,1), R(1,2), I(1,2), ... R(4,8), I(4,8)    # row-index fastest
-R(1,1), I(1,1), R(1,2), I(1,2), ... R(1,8), I(1,8), R(2,1), I(2,1), ... R(4,8), I(4,8)    # column-index fastest 
+<PRE># row-index fastest
+R(1,1), I(1,1), R(2,1), I(2,1), ... R(4,1), I(4,1), R(1,2), I(1,2), ... R(4,8), I(4,8)
+# column-index fastest
+R(1,1), I(1,1), R(1,2), I(1,2), ... R(1,8), I(1,8), R(2,1), I(2,1), ... R(4,8), I(4,8) 
 </PRE>
 <P>The calling app chooses which ordering by specifying which dimension
 of the 100x200 grid is fast-varying and which is slow-varying.  The

@@ -172,21 +172,23 @@ where N is nfast, nmid, or nslow.
 </P>
 <PRE>type(c_ptr) :: fft    ! set by <A HREF = "api_create.html">fft3d_create()</A> 
 </PRE>
-<P>integer nfast,nmid,nslow
+<PRE>integer nfast,nmid,nslow
 integer in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi
 integer out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi
 integer permute,fftsize,sendsize,recvsize
 inteter flag,niter,tflag
-real(8) tmax
-</P>
+real(8) tmax 
+</PRE>
 <PRE>call fft3d_tune(fft,nfast,nmid,nslow, &
                 in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
                 out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
                 permute,fftsize,sendsize,recvsize,
                 flag,niter,tmax,tflag) 
 </PRE>
-<P>The "in i/j/k lo/hi" indices range from 1 to N inclusive,
-where N is nfast, nmid, or nslow.
+<P>For Fortran the "in i/j/k lo/hi" indices then range from 1 to N
+inclusive, where N is nfast, nmid, or nslow.  Unlike the other
+languages discussed on this page where the indices range from 0 to N-1
+inclusive.
 </P>
 <HR>
 
