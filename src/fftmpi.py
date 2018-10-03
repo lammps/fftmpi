@@ -17,7 +17,7 @@ import sys,traceback
 from ctypes import *
 
 # Numpy and mpi4py packages must exist
-
+  
 try:
   import numpy as np
   numpyflag = 1
@@ -69,10 +69,19 @@ class FFT3dMPI:
     self.lib.fft3d_set.argtypes = [c_void_p,c_char_p,c_int]
     self.lib.fft3d_set.restype = None
     
-    # restype will be reset by get()
-    self.lib.fft3d_get.argtypes = [c_void_p,c_char_p]
-    self.lib.fft3d_get.restype = c_void_p
-    
+    self.lib.fft3d_get_int.argtypes = [c_void_p,c_char_p]
+    self.lib.fft3d_get_int.restype = c_int
+    self.lib.fft3d_get_int64.argtypes = [c_void_p,c_char_p]
+    self.lib.fft3d_get_int64.restype = c_longlong
+    self.lib.fft3d_get_double.argtypes = [c_void_p,c_char_p]
+    self.lib.fft3d_get_double.restype = c_double
+    self.lib.fft3d_get_string.argtypes = [c_void_p,c_char_p,POINTER(c_int)]
+    self.lib.fft3d_get_string.restype = c_char_p
+    self.lib.fft3d_get_int_vector.argtypes = [c_void_p,c_char_p,POINTER(c_int)]
+    self.lib.fft3d_get_int_vector.restype = POINTER(c_int)
+    self.lib.fft3d_get_double_vector.argtypes = [c_void_p,c_char_p,POINTER(c_int)]
+    self.lib.fft3d_get_double_vector.restype = POINTER(c_double)
+
     self.lib.fft3d_setup.argtypes = \
       [c_void_p,c_int,c_int,c_int,
        c_int,c_int,c_int,c_int,c_int,c_int,
@@ -151,21 +160,32 @@ class FFT3dMPI:
   def set(self,keyword,value):
     self.lib.fft3d_set(self.fft,keyword,value)
 
-  def get(self,keyword,type,ptr):
+  def get_int(self,keyword):
+    return self.lib.fft3d_get_int(self.fft,keyword)
 
-    # type = 1 for int, 2 for double, 3 for int64, 4 for string
-    # ptr = 0 for scalar, 1 for vector
+  def get_int64(self,keyword):
+    return self.lib.fft3d_get_int64(self.fft,keyword)
 
-    if type == 1: self.lib.fft3d_get.restype = POINTER(c_int)
-    elif type == 2: self.lib.fft3d_get.restype = POINTER(c_double)
-    elif type == 3: self.lib.fft3d_get.restype = POINTER(c_longlong)
-    elif type == 4: self.lib.fft3d_get.restype = c_char_p
+  def get_double(self,keyword):
+    return self.lib.fft3d_get_double(self.fft,keyword)
 
-    cptr = self.lib.fft3d_get(self.fft,keyword)
-    
+  def get_string(self,keyword):
+    nlen = c_int()
+    cptr = self.lib.fft3d_get_string(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    if ptr == 0: return cptr[0]
-    else: return cptr
+    return cptr
+    
+  def get_int_vector(self,keyword):
+    nlen = c_int()
+    cptr = self.lib.fft3d_get_int_vector(self.fft,keyword,byref(nlen))
+    if not bool(cptr): return None   # NULL ptr is False in ctypes
+    return cptr
+    
+  def get_double_vector(self,keyword):
+    nlen = c_int()
+    cptr = self.lib.fft3d_get_double_vector(self.fft,keyword,byref(nlen))
+    if not bool(cptr): return None   # NULL ptr is False in ctypes
+    return cptr
 
   def setup(self,nfast,nmid,nslow,
             in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
@@ -234,7 +254,7 @@ class FFT3dMPI:
       cout = outdata.ctypes.data_as(POINTER(c_float))
     else:
       cin = indata.ctypes.data_as(POINTER(c_double))
-      cout = oudata.ctypes.data_as(POINTER(c_double))
+      cout = outdata.ctypes.data_as(POINTER(c_double))
 
     self.lib.fft3d_only_remaps(self.fft,cin,cout,flag)
 
@@ -308,9 +328,18 @@ class FFT2dMPI:
     self.lib.fft2d_set.argtypes = [c_void_p,c_char_p,c_int]
     self.lib.fft2d_set.restype = None
 
-    # restype will be reset by get()
-    self.lib.fft2d_get.argtypes = [c_void_p,c_char_p]
-    self.lib.fft2d_get.restype = c_void_p
+    self.lib.fft2d_get_int.argtypes = [c_void_p,c_char_p]
+    self.lib.fft2d_get_int.restype = c_int
+    self.lib.fft2d_get_int64.argtypes = [c_void_p,c_char_p]
+    self.lib.fft2d_get_int64.restype = c_longlong
+    self.lib.fft2d_get_double.argtypes = [c_void_p,c_char_p]
+    self.lib.fft2d_get_double.restype = c_double
+    self.lib.fft2d_get_string.argtypes = [c_void_p,c_char_p,POINTER(c_int)]
+    self.lib.fft2d_get_string.restype = c_char_p
+    self.lib.fft2d_get_int_vector.argtypes = [c_void_p,c_char_p,POINTER(c_int)]
+    self.lib.fft2d_get_int_vector.restype = POINTER(c_int)
+    self.lib.fft2d_get_double_vector.argtypes = [c_void_p,c_char_p,POINTER(c_int)]
+    self.lib.fft2d_get_double_vector.restype = POINTER(c_double)
     
     self.lib.fft2d_setup.argtypes = \
       [c_void_p,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,
@@ -385,21 +414,32 @@ class FFT2dMPI:
   def set(self,keyword,value):
     self.lib.fft2d_set(self.fft,keyword,value)
 
-  def get(self,keyword,type,ptr):
+  def get_int(self,keyword):
+    return self.lib.fft2d_get_int(self.fft,keyword)
 
-    # type = 1 for int, 2 for double, 3 for int64, 4 for string
-    # ptr = 0 for scalar, 1 for vector
+  def get_int64(self,keyword):
+    return self.lib.fft2d_get_int64(self.fft,keyword)
 
-    if type == 1: self.lib.fft2d_get.restype = POINTER(c_int)
-    elif type == 2: self.lib.fft2d_get.restype = POINTER(c_double)
-    elif type == 3: self.lib.fft2d_get.restype = POINTER(c_longlong)
-    elif type == 4: self.lib.fft2d_get.restype = c_char_p
+  def get_double(self,keyword):
+    return self.lib.fft2d_get_double(self.fft,keyword)
 
-    cptr = self.lib.fft2d_get(self.fft,keyword)
-
+  def get_string(self,keyword):
+    nlen = c_int()
+    cptr = self.lib.fft2d_get_string(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    if ptr == 0: return cptr[0]
-    else: return cptr
+    return cptr
+    
+  def get_int_vector(self,keyword):
+    nlen = c_int()
+    cptr = self.lib.fft2d_get_int_vector(self.fft,keyword,byref(nlen))
+    if not bool(cptr): return None   # NULL ptr is False in ctypes
+    return cptr
+    
+  def get_double_vector(self,keyword):
+    nlen = c_int()
+    cptr = self.lib.fft2d_get_double_vector(self.fft,keyword,byref(nlen))
+    if not bool(cptr): return None   # NULL ptr is False in ctypes
+    return cptr
 
   def setup(self,nfast,nslow,in_ilo,in_ihi,in_jlo,in_jhi,
             out_ilo,out_ihi,out_jlo,out_jhi,permute):

@@ -5,8 +5,11 @@
 #include <string.h>
 #include "memory.h"
 
+// memory alignment settings
+
 #if defined(__INTEL_COMPILER)
-#if defined(FFT_USE_TBB_ALLOCATOR)
+#ifndef FFT_INTEL_NO_TBB
+#define FFT_USE_TBB_ALLOCATOR
 #include "tbb/scalable_allocator.h"
 #else
 #include <malloc.h>
@@ -62,8 +65,9 @@ void *Memory::srealloc(void *ptr, int64_t nbytes)
   uintptr_t offset = ((uintptr_t)(const void *)(ptr)) % FFT_MEMALIGN;
   if (offset) {
     void *optr = ptr;
-    ptr = smalloc(nbytes,name);
-    memcpy(ptr, optr, MIN(nbytes,malloc_usable_size(optr)));
+    ptr = smalloc(nbytes);
+    if (nbytes < malloc_usable_size(optr)) memcpy(ptr,optr,nbytes);
+    else memcpy(ptr,optr,malloc_usable_size(optr));
     free(optr);
   }
 #else

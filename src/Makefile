@@ -37,6 +37,13 @@ OBJ3D = $(SRC3D:.cpp=.o)
 
 MEM_INC =	-DFFT_MEMALIGN=64
 
+tbb = 		yes
+TBB =		$(shell echo $(tbb) | tr a-z A-Z)
+
+ifeq ($(TBB),NO)
+  TBB_INC = -DFFT_INTEL_NO_TBB
+endif
+
 fft = 		kiss
 FFT =		$(shell echo $(fft) | tr a-z A-Z)
 FFT_INC =       -DFFT_$(FFT)
@@ -53,6 +60,10 @@ ifeq ($(P),SINGLE)
 else
   PRECISION = -DFFT_DOUBLE
 endif
+
+EXTRA_INC =     $(MEM_INC) $(TBB_INC) $(FFT_INC) $(PRECISION)
+
+# 1d FFT libraries used for shared fftMPI lib build
 
 ifeq ($(FFT),FFTW2)
   FFT1D = -lfftw
@@ -78,37 +89,27 @@ else
   FFT1D =
 endif
 
-EXTRA_INC =     $(MEM_INC) $(FFT_INC) $(PRECISION)
-
 # targets
 
-lib:	lib2d lib3d
-
 shlib:	shlib2d shlib3d
+
+lib:	lib2d lib3d
 
 all:	shlib lib
 
 help:
-	@echo 'make                default = lib, KISS 1d fft, double precision'
-	@echo 'make lib            build 2 static fftMPI libs: 2d and 3d'
+	@echo 'make                default = shlib, KISS 1d fft, double precision'
 	@echo 'make shlib          build 2 shared fftMPI libs: 2d and 3d'
+	@echo 'make lib            build 2 static fftMPI libs: 2d and 3d'
 	@echo 'make all            build 4 fftMPI libs: lib and shlib'
-	@echo 'make lib2d          build static 2d fftMPI lib'
-	@echo 'make lib3d          build static 3d fftMPI lib'
 	@echo 'make shlib2d        build shared 2d fftMPI lib'
 	@echo 'make shlib3d        build shared 3d fftMPI lib'
+	@echo 'make lib2d          build static 2d fftMPI lib'
+	@echo 'make lib3d          build static 3d fftMPI lib'
 	@echo 'make ... fft=fftw   build with FFTW3 (FFTW), FFTW2, MKL 1d ffts'
 	@echo 'make ... p=single   build for single precision'
 	@echo 'make clean          remove all *.o files'
 	@echo 'make clean-all      remove *.o and lib files'
-
-lib2d:
-	$(MAKE) clean
-	$(MAKE) static2d fft=$(fft) p=$(p)
-
-lib3d:
-	$(MAKE) clean
-	$(MAKE) static3d fft=$(fft) p=$(p)
 
 shlib2d:
 	$(MAKE) clean
@@ -118,6 +119,14 @@ shlib3d:
 	$(MAKE) clean
 	$(MAKE) shared3d fft=$(fft) p=$(p)
 
+lib2d:
+	$(MAKE) clean
+	$(MAKE) static2d fft=$(fft) p=$(p)
+
+lib3d:
+	$(MAKE) clean
+	$(MAKE) static3d fft=$(fft) p=$(p)
+
 static2d:	$(OBJ2D)
 		$(ARCHIVE) $(ARCHFLAGS) $(LIB2D) $(OBJ2D)
 
@@ -125,10 +134,12 @@ static3d:	$(OBJ3D)
 		$(ARCHIVE) $(ARCHFLAGS) $(LIB3D) $(OBJ3D)
 
 shared2d:	$(OBJ2D)
-		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) -o $(SHLIB2D) $(OBJ2D) $(FFT1D)
+		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) \
+		-o $(SHLIB2D) $(OBJ2D) $(FFT1D)
 
 shared3d:	$(OBJ3D)
-		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) -o $(SHLIB3D) $(OBJ3D) $(FFT1D)
+		$(CC) $(CCFLAGS) $(SHFLAGS) $(SHLIBFLAGS) \
+		-o $(SHLIB3D) $(OBJ3D) $(FFT1D)
 
 clean:
 	@rm -f *.o *.pyc
