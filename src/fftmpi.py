@@ -173,19 +173,21 @@ class FFT3dMPI:
     nlen = c_int()
     cptr = self.lib.fft3d_get_string(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    return cptr
+    return cptr                      # becomes Python string with correct length
     
   def get_int_vector(self,keyword):
     nlen = c_int()
     cptr = self.lib.fft3d_get_int_vector(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    return cptr
+    ivec = cptr[:nlen.value]         # ivec now has correct Python length
+    return ivec
     
   def get_double_vector(self,keyword):
     nlen = c_int()
     cptr = self.lib.fft3d_get_double_vector(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    return cptr
+    dvec = cptr[:nlen.value]         # dvec now has correct Python length
+    return dvec
 
   def setup(self,nfast,nmid,nslow,
             in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
@@ -427,19 +429,21 @@ class FFT2dMPI:
     nlen = c_int()
     cptr = self.lib.fft2d_get_string(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    return cptr
+    return cptr                      # becomes Python string with correct length
     
   def get_int_vector(self,keyword):
     nlen = c_int()
     cptr = self.lib.fft2d_get_int_vector(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    return cptr
+    ivec = cptr[:nlen.value]         # ivec now has correct Python length
+    return ivec
     
   def get_double_vector(self,keyword):
     nlen = c_int()
     cptr = self.lib.fft2d_get_double_vector(self.fft,keyword,byref(nlen))
     if not bool(cptr): return None   # NULL ptr is False in ctypes
-    return cptr
+    dvec = cptr[:nlen.value]         # dvec now has correct Python length
+    return dvec
 
   def setup(self,nfast,nslow,in_ilo,in_ihi,in_jlo,in_jhi,
             out_ilo,out_ihi,out_jlo,out_jhi,permute):
