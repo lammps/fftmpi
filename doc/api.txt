@@ -119,6 +119,8 @@ int precision = 1;
 int precision = 2;
 #endif :pre
 
+// main program :pre
+
 int main(int narg, char **args)
 \{
   // setup MPI :pre
