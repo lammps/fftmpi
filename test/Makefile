@@ -33,7 +33,7 @@ endif
 
 # 1d FFT libraries used for build with static fftMPI library
 
-#fft = 		kiss
+fft =		kiss      # no library file
 FFT =		$(shell echo $(fft) | tr a-z A-Z)
 
 ifeq ($(FFT),FFTW2)
@@ -72,7 +72,7 @@ EXTRA_PATH =    $(FFT_PATH)
 
 # targets
 
-all:	clean-all tests simples
+all:	clean-all simples tests
 
 tests:	test3d test2d test3d_c test2d_c test3d_f90 test2d_f90 
 

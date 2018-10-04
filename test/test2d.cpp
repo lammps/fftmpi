@@ -18,7 +18,7 @@
 //         0 = 1 iteration = forward full FFT, backward full FFT
 //         1 = 1 iteration = forward convolution FFT, backward convolution FFT
 //         2 = 1 iteration = just forward full FFT
-//         3 = 1 iteration = just foward convolution FFT
+//         3 = 1 iteration = just forward convolution FFT
 //         full FFT returns data to original layout
 //         forward convolution FFT is brick -> y-pencil
 //         backward convolution FFT is y-pencil -> brick

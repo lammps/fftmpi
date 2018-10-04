@@ -1,4 +1,4 @@
-// Compute a forward/inverse double precision complex FFT using fftMPI
+// Compute a forward/inverse complex FFT using fftMPI
 //   change FFT size by editing 3 "FFT size" lines
 //   run on any number of procs
 
@@ -21,6 +21,14 @@ using namespace FFTMPI_NS;
 #define NMID 128
 #define NSLOW 128
 
+// precision-dependent settings
+
+#ifdef FFT_SINGLE
+int precision = 1;
+#else
+int precision = 2;
+#endif
+
 int main(int narg, char **args)
 {
   // setup MPI
@@ -34,7 +42,6 @@ int main(int narg, char **args)
 
   // instantiate FFT
 
-  int precision = 2;
   FFT3d *fft = new FFT3d(world,precision);
 
   // simple algorithm to factor Nprocs into roughly cube roots

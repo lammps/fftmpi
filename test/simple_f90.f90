@@ -1,4 +1,4 @@
-! Compute a forward/inverse double precision complex FFT using fftMPI
+! Compute a forward/inverse complex FFT using fftMPI
 !   change FFT size by editing 3 "FFT size" lines
 !   run on any number of procs
 
@@ -26,8 +26,13 @@ integer npfast,npmid,npslow,npmidslow,ipfast,ipmid,ipslow
 integer ilo,ihi,jlo,jhi,klo,khi
 integer fftsize,sendsize,recvsize
 real*8 timestart,timestop,mydiff,alldiff
-real(8), allocatable, target :: work(:)
 type(c_ptr) :: fft
+
+#ifdef FFT_SINGLE
+real(4), allocatable, target :: work(:)
+#else
+real(8), allocatable, target :: work(:)
+#endif
 
 ! fft size
 
@@ -45,7 +50,12 @@ call MPI_Comm_rank(world,me,ierr)
 
 ! instantiate fft
 
-precision = 2
+#ifdef FFT_SINGLE
+precision = 1;
+#else
+precision = 2;
+#endif
+
 call fft3d_create(world,precision,fft)
 
 ! simple algorithm to factor nprocs into roughly cube roots
