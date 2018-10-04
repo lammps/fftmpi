@@ -8,7 +8,7 @@
     <meta name="filename" content="index.html" />
     <meta name="subject" content="fftMPI home page" />
     <meta name="sandia.approval_type" content="formal" />
-    <meta name="sandia.approved" content="2018-8810W" />
+    <meta name="sandia.approved" content="2018-11288W" />
     <link rev="owns" title="Steve Plimpton" href="mailto:sjplimp@sandia.gov" />
     <link rev="made, publisher" title="Steve Plimpton" href="mailto:sjplimp@sandia.gov" />
     <meta name="MSSmartTagsPreventParsing" content="TRUE" />
@@ -21,10 +21,7 @@
 
 <P>This is the home page for the fftMPI library.  It performs 2d or 3d
 Fast Fourier Transforms (FFTs) in parallel where the FFT grid is
-distributed across processors.  It computes multi-dimensional FFTs as
-sets of 1d FFTs (via an external library) in each dimension of the FFT
-grid, interleaved with <A HREF = "https://en.wikipedia.org/wiki/Message_Passing_Interface">MPI communication</A> to migrate data between
-processors.
+distributed across processors.  
 </P>
 <DIV ALIGN=center><TABLE  BORDER=1 >
 <TR ALIGN="center"><TD ><A HREF = "doc/Manual.html">Documentation</A></TD><TD ><A HREF = "http://www.sandia.gov/~sjplimp/download.html">Download</A></TD><TD ><A HREF = "papers.html">Publications</A></TD><TD ><A HREF = "open_source.html">Open source</A></TD></TR>
@@ -33,19 +30,24 @@ processors.
 
 <HR>
 
+<P>The fftMPI library omputes 2d and 3d FFTs as sets of 1d FFTs (via an
+external library) in each dimension of the FFT grid, interleaved with
+<A HREF = "https://en.wikipedia.org/wiki/Message_Passing_Interface">MPI communication</A> to migrate data between processors.
+</P>
 <H4>Features and limitations of fftMPI: 
 </H4>
 <UL><LI>2d or 3d FFTs
 <LI>complex-to-complex FFTs
 <LI>single or double precision
-<LI>runs in serial or parallel on any number of processors
+<LI>compute FFTs in place, or output to separate memory
+<LI>runs on any number of processors, including 1 proc
 <LI>allowed grid size in each dimension = any product of 2,3,5 prime factors
-<LI>grid decomposition = arbitrary tiling across MPI tasks (explained <A HREF = "doc/intro.html">here</A>)
+<LI>grid decomposition = arbitrary tiling across MPI tasks (explained below)
 <LI>initial/final decompositions of grid can be different (useful for convolutions)
-<LI>auto-tuning option for a few parameters which can affect performance
-<LI>1d FFTs computed by an external library: <A HREF = "http://www.fftw.org">FFTW</A>, <A HREF = "mkl">MKL</A>, or <A HREF = "kiss">KISS</A>
+<LI>auto-tuning option for a few parameters which affect performance
+<LI>1d FFTs computed by an external library: <A HREF = "http://www.fftw.org">FFTW</A>, <A HREF = "mkl">MKL</A>, or <A HREF = "https://sourceforge.net/projects/kissfft">KISS</A>
 <LI>data movement/reordering methods can be used without FFTs
-<LI>can invoke multiple instances of the library (e.g. with MPI sub-communicators)
+<LI>invoke multiple instances of the library (e.g. with MPI sub-communicators)
 <LI>callable from C++ or any language via a C interface (e.g. C, Fortran, Python)
 <LI>test programs and interface files included for all 4 of these languages
 <LI>CPU only execution, currently no OpenMP or GPU support 
@@ -69,11 +71,11 @@ parallel molecular dynamics (MD) code, to perform Poisson solves for
 long-range Coulombic interactions via the particle-particle
 particle-mesh (PPPM) method.  It is also used in
 <A HREF = "http://sparta.sandia.gov">SPARTA</A>, a parallel Direct Simulation Monte
-Carlo (DSMC) code, to perform analysis of turbulent flows.
+Carlo (DSMC) code, to perform analyses of turbulent flows.
 </P>
-<P>This fftMPI version replaces the older <A HREF = "http://www.sandia.gov/~sjplimp/docs/fft/README.html">Parallel FFT Package</A>,
-which was developed for LAMMPS around 1997.  The older package is also
-distributed from this <A HREF = "http://www.sandia.gov/~sjplimp/download.html">download site</A>.
+<P>The fftMPI library replaces the older <A HREF = "http://www.sandia.gov/~sjplimp/docs/fft/README.html">Parallel FFT Package</A>,
+which was developed around 1997 for LAMMPS.  The older package is also
+available from this <A HREF = "http://www.sandia.gov/~sjplimp/download.html">download site</A>.
 </P>
 <HR>
 
@@ -87,10 +89,9 @@ contributed to fftMPI:
 </UL>
 <P>You can <A HREF = "http://www.sandia.gov/~sjplimp">send an email to me</A> regarding on any of these topics:
 </P>
-<UL><LI>If you use fftMPI for something interesting, we'd like to hear about
-it. 
+<UL><LI>If you use fftMPI for something interesting, let me know. 
 
-<LI>If you write a paper using fftMPI, we can post a citation on <A HREF = "papers.html">this
+<LI>If you write a paper using fftMPI, Ican post a citation on <A HREF = "papers.html">this
 page</A> 
 
 <LI>If you enhance fftMPI or have ideas for doing so, we can discuss
@@ -141,10 +142,12 @@ Security statement</A>.
 
 
 
+
+
 <HR>
 
 <CENTER><H4>Recent fftMPI News 
 </H4></CENTER>
-<UL><LI><IMG SRC = "new.gif"> (9/18) Initial open-source release of fftMPI. 
+<UL><LI><IMG SRC = "new.gif"> (10/18) Initial open-source release of fftMPI. 
 </UL>
 </HTML>
