@@ -29,25 +29,23 @@ command-line args, which are discussed on the <A HREF = "runtest.html">runtest</
 doc page.
 </P>
 <P>IMPORTANT NOTE: To run the Python apps, you must enable Python to find
-the fftMPI shared library and src/fftmpi.py wrapper script.  To run
-the Python apps in parallel, you must have mpi4py installed in your
-Python.  See the <A HREF = "usage.html">usage</A> doc page for details on both these
-topics.
+the fftMPI shared library and src/fftmpi.py wrapper script.  You must
+also have mpi4py installed in your Python so it can pass an MPI
+communicator to fftMPI.  See the <A HREF = "usage.html">usage</A> doc page for
+details on both these topics.
 </P>
 <P>You can examine the source code of any of the apps in the test dir to
 see the logic and syntax for using fftMPI from your application.  They
 invoke all the methods provided by fftMPI.
-</P>
-<P>IMPORTANT NOTE: The test3d_f90 and test2d_f90 (F90) apps only
-currently use a subset of the fftMPI methods.
 </P>
 <HR>
 
 <H4>Step 1 
 </H4>
 <P>Build fftMPI with one of these make commands.  This should produce two
-lib*.a files, for 2d and 3d FFTs.  They will use the default KISS FFT
-library for 1d FFTs, and operate on double-precision complex data.
+shared-library lib*.so files, for 2d and 3d FFTs.  They will use the
+default KISS FFT library for 1d FFTs, and operate on double-precision
+complex data.
 </P>
 <PRE>% cd fftmpi/src
 % make 
@@ -57,7 +55,7 @@ have installed on your system, and wraps the C++ compiler installed on
 your system.
 </P>
 <P>The <A HREF = "compile.html">compile</A> doc page explains how to choose a different
-1d FFT library and change to single precision.
+1d FFT library and/or change to single precision.
 </P>
 <HR>
 
@@ -75,12 +73,11 @@ apps, test2d.py and test3d.py, are also in the test dir.
 whatever MPI you have installed on your system, and wraps the
 C++, C, or Fortran compilers installed on your system.
 </P>
-<P>The <A HREF = "buildtest.html">buildtest</A> doc page explains how to choose a
-different 1d FFT library and change to single precision.
+<P>The <A HREF = "buildtest.html">buildtest</A> doc page explains how to change to
+single precision.
 </P>
-<P>IMPORTANT NOTE: You must use the same values for the "p" and "fft"
-make variables as were used when building the fftMPI library in the
-src directory.
+<P>IMPORTANT NOTE: You must use build the fftMPI library and the test
+apps with the same precision setting.
 </P>
 <HR>
 

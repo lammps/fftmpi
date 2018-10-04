@@ -186,10 +186,10 @@ for (int i = 0; i < ntrial; i++)
 or "float" (32-bit) for double-precision or single-precision FFTs.
 </P>
 <P>The fft3d_get() functions retrieve the value of an internal public
-variable.  The word after "get" is the type of the variable as stored
-in the FFT class.  The type is listed in the API section above for
-each variable.  The 3 variants that return pointers also return the
-integer length of the returned vector as the last argument of the
+variable.  The word(s) after "get" is the type of the variable as
+stored in the FFT class.  The type is listed in the API section above
+for each variable.  The 3 variants that return pointers also return
+the integer length of the returned vector as the last argument of the
 method.
 </P>
 <HR>
@@ -260,10 +260,10 @@ do i = 1,ntrial
 enddo
 </P>
 <P>The fft3d_get() functions retrieve the value of an internal public
-variable.  The word after "get" is the type of the variable as stored
-in the FFT class.  The type is listed in the API section above for
-each variable.  The 3 variants that return pointers also return the
-integer length of the returned vector as the last argument of the
+variable.  The word(s) after "get" is the type of the variable as
+stored in the FFT class.  The type is listed in the API section above
+for each variable.  The 3 variants that return pointers also return
+the integer length of the returned vector as the last argument of the
 method.
 </P>
 <P>Note how a NULL character (c_null_char) must be appended
@@ -282,47 +282,27 @@ work = np.zeros(2*fftsize,np.float)      # double precision
 fft.only_remaps(work,work,1)
 fft.only_one_remap(work,work,1,3) 
 </PRE>
-<PRE>print "3d FFTs with %s library, precision = %s" %
-  (fft.get("fft1d",4,1),fft.get("precision",4,1)) 
+<PRE>print "3d FFTs with %s library, precision = %s" %   (fft.get_string("fft1d"),fft.get_string("precision")) 
 </PRE>
-<PRE>print "Memory usage (per-proc) by fftMPI = %g MBytes" %
-  (float(fft.get("memusage",3,0)) / 1024/1024) 
+<PRE>print "Memory usage (per-proc) by fftMPI = %g MBytes" %   (float(fft.get_int64("memusage")) / 1024/1024) 
 </PRE>
-<PRE>ntrial = fft.get("ntrial",1,0)
-npertrial = fft.get("npertrial",1,0)
+<P>ntrial = fft.get_int("ntrial")
+npertrial = fft.get_int("npertrial")
 print "Tuning trials & iterations: %d %d" % (ntrial,npertrial)
 for i in range(ntrial):
-  print "  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: " +
-        "%d %d %d %g %g %g %g %g %g %g" %
-        (fft.get("cflags",1,1)[i],fft.get("eflags",1,1)[i],
-         fft.get("pflags",1,1)[i],fft.get("tfft",2,1)[i],
-         fft.get("t1d",2,1)[i],fft.get("tremap",2,1)[i],
-         fft.get("tremap1",2,1)[i],fft.get("tremap2",2,1)[i],
-         fft.get("tremap3",2,1)[i],fft.get("tremap4",2,1)[i]) 
-</PRE>
+  print "  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: " +     "%d %d %d %g %g %g %g %g %g %g" %     (fft.get_int_vector("cflags")<B>i</B>,fft.get_int_vector("eflags")<B>i</B>,
+     fft.get_int_vector("pflags")<B>i</B>,fft.get_double_vector("tfft")<B>i</B>,
+     fft.get_double_vector("t1d")<B>i</B>,fft.get_double_vector("tremap")<B>i</B>,
+     fft.get_double_vector("tremap1")<B>i</B>,
+     fft.get_double_vector("tremap2")<B>i</B>,
+     fft.get_double_vector("tremap3")<B>i</B>,
+     fft.get_double_vector("tremap4")<B>i</B>)
+</P>
 <P>The "fft" object is created by instantiating an instance
 of the <A HREF = "api_create.html">FFT3dMPI class</A>.
 </P>
-<P>The same get() function retrieves the value of any of the internal
-public variable.  Aside from the string keyword it takes two additional
-arguments for the datatype of the variable and whether it is a scalar
-value or vector.
-</P>
-<P>The 2nd argument is datatype:
-</P>
-<UL><LI>datatype = 1 = int (32-bit)
-<LI>datatype = 2 = double
-<LI>datatype = 3 = int (64-bit)
-<LI>datatype = 4 = string 
-</UL>
-<P>The 3rd argument is ptrflag:
-</P>
-<UL><LI>ptrflag = 0 = scalar value
-<LI>ptrflag = 1 = vector pointer 
-</UL>
-<P>If the type of the variable in the API section above is an int,
-double, int64_t, or char * (string), then set ptrflag = 0.  If the
-type of the variable is an "int *" or "double *", then set ptrflag =
-1.
+<P>The get() functions retrieve the value of an internal public variable.
+The word(s) after "get" is the type of the variable as stored in the FFT
+class.  The type is listed in the API section above for each variable.
 </P>
 </HTML>

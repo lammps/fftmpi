@@ -2,15 +2,24 @@
 
 Running the test programs :h3
 
-The test programs (apps) illustrate how to use fftMPI.  They also
-enable testing and benchmarking of the various methods and options
-that fftMPI supports.  These options are specified via command-line
-arguments to the apps as indicated below.  All of the apps can be
+The test programs (apps) in the test dir illustrate how to use fftMPI.
+They also enable experiementation with and benchmarking of the various
+methods and options that fftMPI supports.  All of the apps can be
 launched on any number of processors (including a single processor)
 via mpirun.
 
 Here are example launch commands.  Those without a leading mpirun will
 run on a single processor:
+
+% simple
+% simple_f90
+% mpirun -np 12 simple
+% mpirun -np 4 simple_c
+% mpirun -np 8 python simple.py :pre
+
+The simple apps take no command-line arguments.  To change the size of
+the FFT you need to edit the 3 "FFT size" lines near the top of each
+file.
 
 % test3d -g 100 100 100 -n 50
 % test3d_c -g 100 100 100 -n 50 -m 1 -i step
@@ -20,6 +29,9 @@ run on a single processor:
 % test2d_f90 -g 256 256 -n 1000
 % python test3d.py -g 100 100 100 -n 50
 % mpirun -np 16 python test3d.py -g 100 100 100 -n 50 :pre
+
+The test apps take a variety of optional command-line arguments, all
+of which are explained below.
 
 IMPORTANT NOTE: To run the Python apps, you must enable Python to find
 the fftMPI shared library and src/fftmpi.py wrapper script.  To run
@@ -37,12 +49,10 @@ wish to change.  Additional details are explained below.  An
 explanation of the output of the test programs is also given below.
 
 The test3d (C++) and test3d_c (C) and test3d.py (Python) apps perform
-3d FFTs and use identical commane-line arguments.  The test2d (C++)
+3d FFTs and use identical command-line arguments.  The test2d (C++)
 and test2d_c (C) and test2d.py (Python) apps perform 2d FFTs and take
-identical arguments except as noted below for -g, -pin, or -pout.
-
-IMPORTANT NOTE: The test3d_f90 and test2d_f90 (F90) apps only
-currently support the -h, -g, and -n options from this list.
+identical arguments to the 3d apps except as noted below for -g, -pin,
+or -pout.
 
 Note that all the 3d apps should produce identical numerical results,
 and give very similar performance to each other, since the work is
@@ -71,7 +81,7 @@ Command-line syntax: :h4
      0 = 1 iteration = forward full FFT, backward full FFT
      1 = 1 iteration = forward convolution FFT, backward convolution FFT
      2 = 1 iteration = just forward full FFT
-     3 = 1 iteration = just foward convolution FFT
+     3 = 1 iteration = just forward convolution FFT
      full FFT returns data to original layout
      forward convolution FFT is brick -> z-pencil (y-pencil in 2d)
      backward convolution FFT is z-pencil -> brick (y-pencil in 2d)

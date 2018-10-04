@@ -15,14 +15,16 @@ across processors for both input to and output from the FFT.  Then
 invoke the compute() method as many times as needed to perform forward
 and/or inverse FFTs.  Destruct the class when you are done using it.
 </P>
-<P>Simple example code to do this in C++ is <A HREF = "#code">shown below</A>.  This
-code is from the test/simple.cpp file.  There are also equivalent
-files in the test dir for C, Fortran, and Python: simple_c.c,
-simple_f90.f90, and simple.py.
+<P>Example code to do all of this for 3d FFTs in C++ is <A HREF = "#code">shown
+below</A>.  This code is a copy of the test/simple.cpp file.  There
+are also equivalent files in the test dir for C, Fortran, and Python:
+simple_c.c, simple_f90.f90, and simple.py.
 </P>
 <P>If a different size FFT or different grid distribution is needed, the
-FFT classes can be intstantiated as many times as needed.  Using the
-Remap classes is similar, where the remap() method replaces compute().
+FFT classes can be intstantiated as many times as needed.
+</P>
+<P>Using the Remap classes is similar, where the remap() method replaces
+compute().
 </P>
 <P>The choice to operate on single versus double precision data must be
 made at compile time, as explained on the <A HREF = "compile.html">compile</A> doc
@@ -64,7 +66,7 @@ classes:
 </H3>
 <P>These files in the text dir of the fftMPI distribution compute
 a forward/inverse FFT on any number of procs.  The size of the
-FFT is hardcoded at the top of the file.  Each file is about 140
+FFT is hardcoded at the top of the file.  Each file is about 150
 lines with comments:
 </P>
 <UL><LI>simple.cpp
@@ -99,8 +101,9 @@ In the simple source codes, you could replace "3d" by "2d" for 2d FFTs.
 <PRE>#include <mpi.h>
 #include <math.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include "fft3d.h" 
+#include <stdint.h> 
+</PRE>
+<PRE>#include "fft3d.h" 
 </PRE>
 <PRE>using namespace FFTMPI_NS; 
 </PRE>
@@ -109,6 +112,14 @@ In the simple source codes, you could replace "3d" by "2d" for 2d FFTs.
 <PRE>#define NFAST 128
 #define NMID 128
 #define NSLOW 128 
+</PRE>
+<PRE>// precision-dependent settings 
+</PRE>
+<PRE>#ifdef FFT_SINGLE
+int precision = 1;
+#else
+int precision = 2;
+#endif 
 </PRE>
 <PRE>int main(int narg, char **args)
 {
@@ -123,8 +134,7 @@ In the simple source codes, you could replace "3d" by "2d" for 2d FFTs.
 </PRE>
 <PRE>  // instantiate FFT 
 </PRE>
-<PRE>  int precision = 2;
-  FFT3d *fft = new FFT3d(world,precision); 
+<PRE>  FFT3d *fft = new FFT3d(world,precision); 
 </PRE>
 <PRE>  // simple algorithm to factor Nprocs into roughly cube roots 
 </PRE>
@@ -230,6 +240,7 @@ In the simple source codes, you could replace "3d" by "2d" for 2d FFTs.
 </PRE>
 <PRE>  free(work);
   delete fft;
+  MPI_Finalize();
 } 
 </PRE>
 </HTML>

@@ -28,25 +28,23 @@ command-line args, which are discussed on the "runtest"_runtest.html
 doc page.
 
 IMPORTANT NOTE: To run the Python apps, you must enable Python to find
-the fftMPI shared library and src/fftmpi.py wrapper script.  To run
-the Python apps in parallel, you must have mpi4py installed in your
-Python.  See the "usage"_usage.html doc page for details on both these
-topics.
+the fftMPI shared library and src/fftmpi.py wrapper script.  You must
+also have mpi4py installed in your Python so it can pass an MPI
+communicator to fftMPI.  See the "usage"_usage.html doc page for
+details on both these topics.
 
 You can examine the source code of any of the apps in the test dir to
 see the logic and syntax for using fftMPI from your application.  They
 invoke all the methods provided by fftMPI.
-
-IMPORTANT NOTE: The test3d_f90 and test2d_f90 (F90) apps only
-currently use a subset of the fftMPI methods.
 
 :line
 
 Step 1 :h4
 
 Build fftMPI with one of these make commands.  This should produce two
-lib*.a files, for 2d and 3d FFTs.  They will use the default KISS FFT
-library for 1d FFTs, and operate on double-precision complex data.
+shared-library lib*.so files, for 2d and 3d FFTs.  They will use the
+default KISS FFT library for 1d FFTs, and operate on double-precision
+complex data.
 
 % cd fftmpi/src
 % make :pre
@@ -56,7 +54,7 @@ have installed on your system, and wraps the C++ compiler installed on
 your system.
 
 The "compile"_compile.html doc page explains how to choose a different
-1d FFT library and change to single precision.
+1d FFT library and/or change to single precision.
 
 :line
 
@@ -74,12 +72,11 @@ As with step 1, The builds will be performed with mpicxx, which uses
 whatever MPI you have installed on your system, and wraps the
 C++, C, or Fortran compilers installed on your system.
 
-The "buildtest"_buildtest.html doc page explains how to choose a
-different 1d FFT library and change to single precision.
+The "buildtest"_buildtest.html doc page explains how to change to
+single precision.
 
-IMPORTANT NOTE: You must use the same values for the "p" and "fft"
-make variables as were used when building the fftMPI library in the
-src directory.
+IMPORTANT NOTE: You must use build the fftMPI library and the test
+apps with the same precision setting.
 
 :line
 

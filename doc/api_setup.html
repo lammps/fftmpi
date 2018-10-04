@@ -174,8 +174,10 @@ As explained on the <A HREF = "layout.html">layout</A> doc page, "valid" means t
 every grid point is owned by a unique processor and the union of all
 the tiles is the global grid.
 </P>
-<P>Finally, the permute argument triggers a permutation in storage order
-of fast/mid/slow for the FFT output.  A vakue of 0 means no
+<HR>
+
+<P>The permute argument to setup() triggers a permutation in storage
+order of fast/mid/slow for the FFT output.  A value of 0 means no
 permutation.  A value of 1 means permute once = mid->fast, slow->mid,
 fast->slow.  A value of 2 means permute twice = slow->fast, fast->mid,
 mid->slow.  For 2d FFTs, the only allowed permute values are 0,1.  As
@@ -183,6 +185,38 @@ explained on the <A HREF = "layout">layout</A> doc page, this can be useful when
 performing convolution operations, to avoid extra communication after
 the FFT is performed.
 </P>
+<P>Note that the permute setting does not change the meaning of the "out
+ijk lo/hi" indices relative to the nfast,nmid,nslow grid dimensions.
+It just changes the ordering of the grid point data within a
+processors output tile.  For example, say a processor's output tile is
+20x60x32, located anywhere in the global Nfast x Nmid x Nslow grid.
+</P>
+<P>As explained on the <A HREF = "layout.html">layout</A> doc page, if permute = 0,
+then on input and output the Nfast dimension varies fastest, i.e. for
+a fixed pair of Nmid,Nslow indices, the 20 grid points with Nfast
+indices 1 to 20 are consecutive in memory.  The Nmid dimension varies
+next fastest.  And the Nslow dimension varies slowest, i.e. for a
+fixed pair of Nfast,Nmid indices, the 32 grid points with Nslow
+indices 1 to 32 are spaced in memory with stride = 1200 = 20*60.
+</P>
+<P>If permute = 1, then on output only (input ordering is not changed),
+the Nmid dimension now varies fastest, i.e. for a fixed pair of
+Nfast,Nslow indices, the 60 grid points with Nmid indices 1 to 60 are
+consecutive in memory.  The Nslow dimension now varies next fastest.
+And the Nfast dimension now varies slowest, i.e. for a fixed pair of
+Nmid,Nslow indices, the 20 grid points with Nfast indices 1 to 20 are
+spaced in memory with stride = 1920 = 60*32.
+</P>
+<P>Similarly if permute = 1, then on output only, the Nslow dimension now
+varies fastest, i.e. for a fixed pair of Nfast,Nmid indices, the 32
+grid points with Nslow indices 1 to 32 are consecutive in memory.  The
+Nfast dimension now varies next fastest.  And the Nmid dimension now
+varies slowest, i.e. for a fixed pair of Nfast,Nslow indices, the 60
+grid points with Nmid indices 1 to 60 are spaced in memory with stride
+= 640 = 20*32.
+</P>
+<HR>
+
 <P>Three values are retured by setup().  Fftsize is the max number of FFT
 grid points the processor will own at any stage of the FFT (start,
 intermediate, end).  Note that it is possible for the output size to
