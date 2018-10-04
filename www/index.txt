@@ -18,6 +18,8 @@ fftMPI, a distributed-memory parallel FFT library :c,h3
 
 :line
 
+[NOTE: this website will not go "live" for downloads until 5 Oct.]
+
 This is the home page for the fftMPI library.  It performs 2d or 3d
 Fast Fourier Transforms (FFTs) in parallel where the FFT grid is
 distributed across processors.  
