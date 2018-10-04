@@ -27,6 +27,8 @@ int precision = 1;
 int precision = 2;
 #endif
 
+// main program
+
 int main(int narg, char **args)
 {
   // setup MPI

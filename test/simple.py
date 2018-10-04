@@ -8,6 +8,7 @@
 # % python simple,py                 # run in serial
 # % mpirun -np 4 pythone simple.py   # run in parallel
 
+import math
 import numpy as np
 from mpi4py import MPI
 from fftmpi import FFT3dMPI
@@ -104,7 +105,7 @@ timestop = MPI.Wtime()
 if me == 0:
   print "Two %dx%dx%d FFTs on %d procs as %dx%dx%d grid" % \
     (nfast,nmid,nslow,nprocs,npfast,npmid,npslow)
-  print "CPU time = %g secs" % timestop-timestart
+  print "CPU time = %g secs" % (timestop-timestart)
 
 # find largest difference between initial/final values
 # should be near zero
@@ -114,15 +115,14 @@ mydiff = 0.0
 for k in xrange(klo,khi+1):
   for j in xrange(jlo,jhi+1):
     for i in xrange(ilo,ihi+1):
-      if fabs(work[n]-n) > mydiff: mydiff = fabs(work[n]-n)
+      if abs(work[n]-n) > mydiff: mydiff = abs(work[n]-n)
       n += 1
-      if fabs(work[n]-n) > mydiff: mydiff = fabs(work[n]-n)
+      if abs(work[n]-n) > mydiff: mydiff = abs(work[n]-n)
       n += 1
 
 world.allreduce(mydiff,op=MPI.MAX)
-if me == 0: print "Max difference in initial/final values =",alldiff
+if me == 0: print "Max difference in initial/final values =",mydiff
 
 # clean up
 
 del fft
-

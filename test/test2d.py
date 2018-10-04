@@ -27,7 +27,7 @@ PENCIL,BRICK = range(2)
 ARRAY,POINTER,MEMCPY = range(3)
 IN,OUT = range(2)
 
-# NOTE: how to set this
+# NOTE: how to set this at run-time
 
 precision = 2
 

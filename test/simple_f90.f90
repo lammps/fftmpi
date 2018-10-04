@@ -6,7 +6,7 @@
 ! % simple_f90               # run in serial
 ! % mpirun -np 4 simple_f90  # run in parallel
 
-! FFT size
+! main program
 
 program simple_f90
 
