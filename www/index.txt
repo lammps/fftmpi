@@ -33,9 +33,10 @@ distributed across processors.
 
 :line
 
-The fftMPI library omputes 2d and 3d FFTs as sets of 1d FFTs (via an
-external library) in each dimension of the FFT grid, interleaved with
-"MPI communication"_mpi to migrate data between processors.
+The fftMPI library computes 2d and 3d FFTs in parallel as sets of 1d
+FFTs (via an external library) in each dimension of the FFT grid,
+interleaved with "MPI communication"_mpi to migrate data between
+processors.
 
 Features and limitations of fftMPI: :h4
 
@@ -45,7 +46,7 @@ single or double precision
 compute FFTs in place, or output to separate memory
 runs on any number of processors, including 1 proc
 allowed grid size in each dimension = any product of 2,3,5 prime factors
-grid decomposition = arbitrary tiling across MPI tasks (explained below)
+grid decomposition = arbitrary tiling across MPI tasks (explained "here"_Manual.html )
 initial/final decompositions of grid can be different (useful for convolutions)
 auto-tuning option for a few parameters which affect performance
 1d FFTs computed by an external library: "FFTW"_fftw, "MKL"_mkl, or "KISS"_kiss
