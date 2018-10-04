@@ -108,6 +108,7 @@ help:
 	@echo 'make lib3d          build static 3d fftMPI lib'
 	@echo 'make ... fft=fftw   build with FFTW3 (FFTW), FFTW2, MKL 1d ffts'
 	@echo 'make ... p=single   build for single precision'
+	@echo 'make ... tbb=no     build w/out Intel TBB memory allocation'
 	@echo 'make clean          remove all *.o files'
 	@echo 'make clean-all      remove *.o and lib files'
 
