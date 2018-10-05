@@ -7,12 +7,12 @@
 
 <H3>Benchmarks 
 </H3>
-<P>These are timings for 3d FFTs (dobule precision, complex-to-complex)
+<P>These are timings for 3d FFTs (double precision, complex-to-complex)
 using the fftMPI library on different machines and node hardware
 (see details below).
 </P>
 <P>FFTs of different sizes were run on different node counts.  The
-Gflop/node performance is computed as 5Nlog2(N) flops per FFT / CPU
+Gflop/node performance is listed as 5Nlog2(N) flops per FFT / CPU
 time.  N is the total count of 3d grid points.  E.g. N = 262144 for a
 64x64x64 FFT.  The initial spatial decomposition of the FFT grid was
 into 3d bricks (one per MPI task).  The final decomposition was the
@@ -34,6 +34,10 @@ view a larger version.
 
 <A HREF = "bench/cori_KNL.jpg"><IMG SRC = "bench/cori_KNL_small.jpg"></A>
 
+<P>The downward slope of the curves from left to right is decreasing
+parallel efficiency due to increased communication costs as more nodes
+and MPI tasks are used.
+</P>
 <UL><LI><A HREF = "bench/chama_SandyBridge.html">Table for SandyBridge</A>
 <LI><A HREF = "bench/edison_IvyBridge.html">Table for IvyBridge</A>
 <LI><A HREF = "bench/cori_Haswell.html">Table for Haswell</A>
