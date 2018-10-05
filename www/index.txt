@@ -136,7 +136,7 @@ Security statement"_security.
 :link(bsd,http://en.wikipedia.org/wiki/BSD_license)
 :link(sjp,http://www.sandia.gov/~sjplimp)
 :link(security,http://www.sandia.gov/general/privacy-security/index.html)
-:link(download,http://www.sandia.gov/~sjplimp/downloadXYZ.html)
+:link(download,http://www.sandia.gov/~sjplimp/download.html)
 :link(mpi,https://en.wikipedia.org/wiki/Message_Passing_Interface)
 
 :link(oldfft,http://www.sandia.gov/~sjplimp/docs/fft/README.html)
