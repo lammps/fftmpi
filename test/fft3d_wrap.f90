@@ -58,25 +58,28 @@ interface
     character(c_char) :: keyword(*)
   end function fft3d_get_int64
 
-  function fft3d_get_string(ptr,keyword) bind(c)
+  function fft3d_get_string(ptr,keyword,len) bind(c)
     use iso_c_binding
     type(c_ptr) :: fft3d_get_string
     type(c_ptr), value :: ptr
     character(c_char) :: keyword(*)
+    integer(c_int) :: len
   end function fft3d_get_string
 
-  function fft3d_get_int_vector(ptr,keyword) bind(c)
+  function fft3d_get_int_vector(ptr,keyword,len) bind(c)
     use iso_c_binding
     type(c_ptr) :: fft3d_get_int_vector
     type(c_ptr), value :: ptr
     character(c_char) :: keyword(*)
+    integer(c_int) :: len
   end function fft3d_get_int_vector
 
-  function fft3d_get_double_vector(ptr,keyword) bind(c)
+  function fft3d_get_double_vector(ptr,keyword,len) bind(c)
     use iso_c_binding
     type(c_ptr) :: fft3d_get_double_vector
     type(c_ptr), value :: ptr
     character(c_char) :: keyword(*)
+    integer(c_int) :: len
   end function fft3d_get_double_vector
 
   subroutine fft3d_setup(ptr,nfast,nmid,nslow, &
