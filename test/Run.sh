@@ -15,7 +15,7 @@ cd ../test
 
 echo
 echo "---------------------------"
-echo "Building 6 test apps ..."
+echo "Building sample and test apps ..."
 echo "---------------------------"
 echo
 
