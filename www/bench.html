@@ -16,29 +16,30 @@ Gflop/node performance is computed as 5Nlog2(N) flops per FFT / CPU
 time.  N is the total count of 3d grid points.  E.g. N = 262144 for a
 64x64x64 FFT.  The initial spatial decomposition of the FFT grid was
 into 3d bricks (one per MPI task).  The final decomposition was the
-same.  So the FFT includes operations to remap the grid before
-performing the initial set of 1d FFTs, and to remap the grid after the
-final set of 1d FFTs.
+same.  So the FFT cost includes operations to both remap the grid
+before performing the initial set of 1d FFTs, and to remap the grid
+after the final set of 1d FFTs.
 </P>
 <P>These tests were run in early 2018 using the fftmpi/test/test3d.cpp
-code included in the fftMPI distribution.
+code included in the fftMPI distribution.  Click on a plot to
+view a larger version.
 </P>
-<A HREF = "bench/chama_SandyBridge.jpg"><IMG SRC = "bench/chama_SandyBridge.jpg"></A>
+<A HREF = "bench/chama_SandyBridge.jpg"><IMG SRC = "bench/chama_SandyBridge_small.jpg"></A>
 
-<A HREF = "bench/edison_IvyBridge.jpg"><IMG SRC = "bench/edison_IvyBridge.jpg"></A>
+<A HREF = "bench/edison_IvyBridge.jpg"><IMG SRC = "bench/edison_IvyBridge_small.jpg"></A>
 
-<A HREF = "bench/cori_Haswell.jpg"><IMG SRC = "bench/cori_Haswell.jpg"></A>
+<A HREF = "bench/cori_Haswell.jpg"><IMG SRC = "bench/cori_Haswell_small.jpg"></A>
 
-<A HREF = "bench/cori_KNL.jpg"><IMG SRC = "bench/cori_KNL.jpg"></A>
+<A HREF = "bench/solo_Broadwell.jpg"><IMG SRC = "bench/solo_Broadwell_small.jpg"></A>
 
-<A HREF = "bench/solo_Broadwell.jpg"><IMG SRC = "bench/solo_Broadwell.jpg"></A>
+<A HREF = "bench/cori_KNL.jpg"><IMG SRC = "bench/cori_KNL_small.jpg"></A>
 
-<P><A HREF = "bench/chama_SandyBridge.html">Table for SandyBridge</A>
-<A HREF = "bench/edison_IvyBridge.html">Table for IvyBridge</A>
-<A HREF = "bench/cori_Haswell.html">Table for Haswell</A>
-<A HREF = "bench/cori_KNL.html">Table for KNL</A>
-<A HREF = "bench/solo_Broadwell.html">Table for Broadwell</A>
-</P>
+<UL><LI><A HREF = "bench/chama_SandyBridge.html">Table for SandyBridge</A>
+<LI><A HREF = "bench/edison_IvyBridge.html">Table for IvyBridge</A>
+<LI><A HREF = "bench/cori_Haswell.html">Table for Haswell</A>
+<LI><A HREF = "bench/solo_Broadwell.html">Table for Broadwell</A>
+<LI><A HREF = "bench/cori_KNL.html">Table for KNL</A> 
+</UL>
 <P>The tables have a line for each data point in the corresponding plot
 with the following fields:
 </P>
@@ -56,6 +57,8 @@ the meaning of these 3 settings.  The choice of settings were
 determined by using the <A HREF = "doc/api_tune.html">tune() method</A> of fftMPI to
 auto-tune its performance for a particular FFT size and node count.
 </P>
+<HR>
+
 <P><B>Machine info</B>:
 </P>
 <P>chama = Intel SandyBridge CPUs
@@ -86,7 +89,7 @@ auto-tune its performance for a particular FFT size and node count.
 <LI>interconnect = Cray Aries with Dragonfly topology
 <LI>runs were made with 64 MPI tasks/node 
 </UL>
-<P><B>solo</B> = Intel Broadwell CPUs
+<P>solo = Intel Broadwell CPUs
 </P>
 <UL><LI>Sandia 1122-node cluster
 <LI>node = dual-socket Broadwell 2.1 GHz CPU E5-2695, 36 cores + 2x hyperthreading
