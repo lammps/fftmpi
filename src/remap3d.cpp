@@ -2,8 +2,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "remap3d.h"
 #include "pack3d.h"
+#include "version.h"
 #include "memory.h"
 #include "error.h"
 

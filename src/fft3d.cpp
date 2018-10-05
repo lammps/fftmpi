@@ -17,6 +17,7 @@
 
 #include "fft3d.h"
 #include "remap3d.h"
+#include "version.h"
 #include "memory.h"
 #include "error.h"
 

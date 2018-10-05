@@ -17,6 +17,7 @@
 
 #include "fft2d.h"
 #include "remap2d.h"
+#include "version.h"
 #include "memory.h"
 #include "error.h"
 
