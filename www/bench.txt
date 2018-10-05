@@ -14,24 +14,25 @@ Gflop/node performance is computed as 5Nlog2(N) flops per FFT / CPU
 time.  N is the total count of 3d grid points.  E.g. N = 262144 for a
 64x64x64 FFT.  The initial spatial decomposition of the FFT grid was
 into 3d bricks (one per MPI task).  The final decomposition was the
-same.  So the FFT includes operations to remap the grid before
-performing the initial set of 1d FFTs, and to remap the grid after the
-final set of 1d FFTs.
+same.  So the FFT cost includes operations to both remap the grid
+before performing the initial set of 1d FFTs, and to remap the grid
+after the final set of 1d FFTs.
 
 These tests were run in early 2018 using the fftmpi/test/test3d.cpp
-code included in the fftMPI distribution.
+code included in the fftMPI distribution.  Click on a plot to
+view a larger version.
 
-:image(bench/chama_SandyBridge.jpg,bench/chama_SandyBridge.jpg)
-:image(bench/edison_IvyBridge.jpg,bench/edison_IvyBridge.jpg)
-:image(bench/cori_Haswell.jpg,bench/cori_Haswell.jpg)
-:image(bench/cori_KNL.jpg,bench/cori_KNL.jpg)
-:image(bench/solo_Broadwell.jpg,bench/solo_Broadwell.jpg)
+:image(bench/chama_SandyBridge_small.jpg,bench/chama_SandyBridge.jpg)
+:image(bench/edison_IvyBridge_small.jpg,bench/edison_IvyBridge.jpg)
+:image(bench/cori_Haswell_small.jpg,bench/cori_Haswell.jpg)
+:image(bench/solo_Broadwell_small.jpg,bench/solo_Broadwell.jpg)
+:image(bench/cori_KNL_small.jpg,bench/cori_KNL.jpg)
 
 "Table for SandyBridge"_bench/chama_SandyBridge.html
 "Table for IvyBridge"_bench/edison_IvyBridge.html
 "Table for Haswell"_bench/cori_Haswell.html
-"Table for KNL"_bench/cori_KNL.html
 "Table for Broadwell"_bench/solo_Broadwell.html
+"Table for KNL"_bench/cori_KNL.html :ul
 
 The tables have a line for each data point in the corresponding plot
 with the following fields:
@@ -49,6 +50,8 @@ See the "setup() API"_doc/api_setup.html doc page for more details on
 the meaning of these 3 settings.  The choice of settings were
 determined by using the "tune() method"_doc/api_tune.html of fftMPI to
 auto-tune its performance for a particular FFT size and node count.
+
+:line
 
 [Machine info]:
 
@@ -80,7 +83,7 @@ node = Knights Landing 7250 processor, 68 cores + 4x hyperthreading
 interconnect = Cray Aries with Dragonfly topology
 runs were made with 64 MPI tasks/node :ul
 
-[solo] = Intel Broadwell CPUs
+solo = Intel Broadwell CPUs
 
 Sandia 1122-node cluster
 node = dual-socket Broadwell 2.1 GHz CPU E5-2695, 36 cores + 2x hyperthreading
