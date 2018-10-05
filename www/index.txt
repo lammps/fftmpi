@@ -74,8 +74,8 @@ particle-mesh (PPPM) method.  It is also used in
 Carlo (DSMC) code, to perform analyses of turbulent flows.
 
 The fftMPI library replaces the older "Parallel FFT Package"_oldfft,
-which was developed around 1997 for LAMMPS.  The older package is also
-available from this "download site"_download.
+which we developed in the late 1990s for LAMMPS.  The older package is
+also available from this "download site"_download.
 
 :line
 
@@ -113,10 +113,10 @@ Other freely available parallel FFT libraries include:
 "FFTW"_fftw (see "this doc page"_fftwmpi) from Matteo Frigo and Steven G. Johnson (MIT) :ul
 
 The release of the "SWFFT library"_SWFFT, available on GitLab, was
-also funded by the ECP.  SWFFT is a stand-alone version of the FFTs
-used in "HACC"_HACC, a particle-based cosmology code that models the
-universe on the largest DOE supercomputers.  The HACC project is led
-by Salman Habib at ANL.
+also funded by the DOE ECP.  SWFFT is a stand-alone version of the
+FFTs used in "HACC"_HACC, a particle-based cosmology code that models
+the universe on the largest DOE supercomputers.  The HACC project is
+led by Salman Habib at ANL.
 
 The fftMPI and SWFFT libraries are similar in scope, but also have
 some algorithmic and feature differences, motivated by their use in
