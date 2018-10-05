@@ -1,3 +1,17 @@
+! /* ----------------------------------------------------------------------
+!    fftMPI - library for computing 3d/2d FFTs in parallel
+!    http://fftmpi.sandia.gov, Sandia National Laboratories
+!    Steve Plimpton, sjplimp@sandia.gov
+!
+!    Copyright 2018 National Technology & Engineering Solutions of
+!    Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with
+!    NTESS, the U.S. Government retains certain rights in this software.
+!    This software is distributed under the modified Berkeley Software
+!    Distribution (BSD) License.
+!
+!    See the README file in the top-level fftMPI directory.
+! ------------------------------------------------------------------------- */
+
 ! ISO_C_binding wrapper on fftMPI C interface for 2d FFTs
 
 module fft2d_wrap
@@ -44,28 +58,25 @@ interface
     character(c_char) :: keyword(*)
   end function fft2d_get_int64
 
-  FUNCTION fft2d_get_string(ptr,keyword,len) BIND(c)
+  function fft2d_get_string(ptr,keyword) bind(c)
     use iso_c_binding
     type(c_ptr) :: fft2d_get_string
     type(c_ptr), value :: ptr
     character(c_char) :: keyword(*)
-    integer(c_int) :: len
   end function fft2d_get_string
 
-  FUNCTION fft2d_get_int_vector(ptr,keyword,len) BIND(c)
+  function fft2d_get_int_vector(ptr,keyword) bind(c)
     use iso_c_binding
     type(c_ptr) :: fft2d_get_int_vector
     type(c_ptr), value :: ptr
     character(c_char) :: keyword(*)
-    integer(c_int) :: len
   end function fft2d_get_int_vector
 
-  FUNCTION fft2d_get_double_vector(ptr,keyword,len) BIND(c)
+  function fft2d_get_double_vector(ptr,keyword) bind(c)
     use iso_c_binding
     type(c_ptr) :: fft2d_get_double_vector
     type(c_ptr), value :: ptr
     character(c_char) :: keyword(*)
-    integer(c_int) :: len
   end function fft2d_get_double_vector
 
   subroutine fft2d_setup(ptr,nfast,nslow, &
