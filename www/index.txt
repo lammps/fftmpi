@@ -18,9 +18,9 @@ fftMPI, a distributed-memory parallel FFT library :c,h3
 
 :line
 
-This is the home page for the fftMPI library.  It performs 2d or 3d
+This is the home page for the fftMPI library.  It performs 3d or 2d
 Fast Fourier Transforms (FFTs) in parallel where the FFT grid is
-distributed across processors.  
+distributed across processors.
 
 "Documentation"_doc/Manual.html,
 "Download"_download,
@@ -33,20 +33,20 @@ distributed across processors.
 
 :line
 
-The fftMPI library computes 2d and 3d FFTs in parallel as sets of 1d
+The fftMPI library computes 3d and 2d FFTs in parallel as sets of 1d
 FFTs (via an external library) in each dimension of the FFT grid,
-interleaved with "MPI communication"_mpi to migrate data between
+interleaved with "MPI communication"_mpi to move data between
 processors.
 
 Features and limitations of fftMPI: :h4
 
-2d or 3d FFTs
+3d or 2d FFTs
 complex-to-complex FFTs
-single or double precision
+double or single precision
 compute FFTs in place, or output to separate memory
 runs on any number of processors, including 1 proc
 allowed grid size in each dimension = any product of 2,3,5 prime factors
-grid decomposition = arbitrary tiling across MPI tasks (explained "here"_Manual.html )
+grid decomposition = arbitrary "tiling across MPI tasks"_Manual.html
 initial/final decompositions of grid can be different (useful for convolutions)
 auto-tuning option for a few parameters which affect performance
 1d FFTs computed by an external library: "FFTW"_fftw, "MKL"_mkl, or "KISS"_kiss
@@ -62,11 +62,7 @@ The fftMPI library is open-source code, distributed freely under the
 terms of the modified "Berkeley Software Distribution (BSD)
 License"_bsd.  See "this page"_open_source.html for more details.  It
 was developed at "Sandia National Laboratories"_snl, a US "Department
-of Energy"_doe facility, for use in coupling scientific applications
-running on desktop machines to large supercomputers.  Funding for
-fftMPI came from DOE's "Office of Advanced Scientific Computing
-Program"_oascr (OASCR) under the auspices of its "Exascale Computing
-Program"_ecp (ECP).
+of Energy"_doe facility
 
 :line
 
@@ -85,29 +81,46 @@ available from this "download site"_download.
 
 The main author of fftMPI is "Steve Plimpton"_sjp, who can be
 contacted at sjplimp at sandia.gov. These collaborators have also
-contributed to fftMPI:
+contributed:
 
 Axel Kohlmemer (Temple U): support for FFTW3 and KISS libraries
 Phil Blood (PSC): single precision option
 Paul Coffman (IBM): optimized MPI collective option :ul
 
-You can "send an email to me"_sjp regarding on any of these topics:
+You can "send me an email"_sjp on any of these topics:
 
-If you use fftMPI for something interesting, let me know. :ulb,l
+If you use fftMPI for something interesting, you can let me
+know. :ulb,l
 
-If you write a paper using fftMPI, Ican post a citation on "this
+If you write a paper using fftMPI, I can post a citation on "this
 page"_papers.html :l
 
-If you enhance fftMPI or have ideas for doing so, we can discuss
-including your improvements in a future release. :l,ule
+If you have ideas for enhancing fftMPI, we can discuss including your
+improvements in a future release. :l,ule
 
 :line
 
+Funding to add some features and release fftMPI as a stand-alone
+library came from DOE's "Office of Advanced Scientific Computing
+Program"_oascr (OASCR) under the auspices of its "Exascale Computing
+Program"_ecp (ECP).  
+
 Other freely available parallel FFT libraries include:
 
+"SWFFT"_SWFFT from Adrian Pope (Argonne National Laboratory)
 "PFFT"_PFFT from Michael Pippig (Technische Universitat Chemnitz)
 "P3DFFT"_P3DFFT from Dmitry Pekurovsky (UCSD)
 "FFTW"_fftw (see "this doc page"_fftwmpi) from Matteo Frigo and Steven G. Johnson (MIT) :ul
+
+The release of the "SWFFT library"_SWFFT, available on GitLab, was
+also funded by the ECP.  SWFFT is a stand-alone version of the FFTs
+used in "HACC"_HACC, a particle-based cosmology code that models the
+universe on the largest DOE supercomputers.  The HACC project is led
+by Salman Habib at ANL.
+
+The fftMPI and SWFFT libraries are similar in scope, but also have
+some algorithmic and feature differences, motivated by their use in
+different applications (LAMMPS and HACC).
 
 :line
 
@@ -127,11 +140,13 @@ Security statement"_security.
 :link(mpi,https://en.wikipedia.org/wiki/Message_Passing_Interface)
 
 :link(oldfft,http://www.sandia.gov/~sjplimp/docs/fft/README.html)
+:link(SWFFT,https://xgitlab.cels.anl.gov/hacc/SWFFT)
 :link(PFFT,https://github.com/mpip/pfft)
 :link(P3DFFT,https://github.com/sdsc/p3dfft)
 :link(fftw,http://www.fftw.org)
 :link(fftwmpi,http://www.fftw.org/fftw3_doc/Distributed_002dmemory-FFTW-with-MPI.html#Distributed_002dmemory-FFTW-with-MPI)
 :link(kiss,https://sourceforge.net/projects/kissfft)
+:link(HACC,https://cacm.acm.org/magazines/2017/1/211098-hacc/fulltext)
 
 :line
 
