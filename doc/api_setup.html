@@ -65,10 +65,11 @@ for performing collective communication when FFT grid data moves to
 new processors between stages of 1d FFTs.
 </P>
 <P>The "point" setting (0) invokes point-to-point MPI_Send() and
-MPI_Receive() methods between pairs of processor to send/receive data.
+MPI_Receive() methods between pairs of processors to send/receive
+data.
 </P>
-<P>The "all" setting (1) invokes the MPI_All2all() method within
-subsets of processors that need to exchange data.
+<P>The "all" setting (1) invokes the MPI_All2all() method within subsets
+of processors that need to exchange data.
 </P>
 <P>The "combo" setting (2) is a combination of the other options.  It
 invokes point-to-point MPI methods for pencil-to-brick data movement,
@@ -96,7 +97,8 @@ to go from brick (rectangle) layout to a y-pencil layout.
 <P>The "packflag" variable = 0/1/2 corresponds to 3 algorithmic choices
 for packing/unpacking FFT grid data into MPI communication buffers.
 </P>
-<P>The "array" setting (0) accesses the local FFT grid data as a 3d (or 2d) array.
+<P>The "array" setting (0) accesses the local FFT grid data as a 3d (or
+2d) array.
 </P>
 <P>The "ptr" setting (1) accesses the local FFT grid data as a 1d vector
 using pointers.
