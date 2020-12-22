@@ -62,16 +62,16 @@ method"_api_setup.html or "tune() method"_tune.html.
 
 For only_remaps(), all the data remappings for the FFT are performed,
 but no 1d FFTs.  The flag value is 1 for a forward FFT and -1 for an
-inverse FFT, the same as the flag value for the "compute()
+backward FFT, the same as the flag value for the "compute()
 method"_api_compute.html.
 
 For only_one_remap(), a single data remappings within the FFT is
 performed (no 1d FFTs).  The flag value is 1 for a forward FFT and -1
-for an inverse FFT.  The "which" argument is one of 1,2,3,4 for a 3d
+for an backward FFT.  The "which" argument is one of 1,2,3,4 for a 3d
 FFT, and one of 1,2,3 for a 2d FFT.  For a forward 3d FFT, 1 = initial
 remap from input layout to x-pencils, 2 = remap from x to y-pencils, 3
 = remap from y to z-pencils, 4 = remap from z-pencils to output
-layout.  For an inverse 3d FFT each of the which = 1,2,3,4 is the
+layout.  For an backward 3d FFT each of the which = 1,2,3,4 is the
 same, except the remap is in the other direction.  E.g. which = 3 is a
 remap from z to y-pencils.  A 2d FFT is the same except there is no y
 to z-pencils remap for a forward FFT.

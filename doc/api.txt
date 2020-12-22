@@ -12,7 +12,7 @@ The basic way to use either of the FFT classes is to instantiate the
 class and call setup() once to define how the FFT grid is distributed
 across processors for both input to and output from the FFT.  Then
 invoke the compute() method as many times as needed to perform forward
-and/or inverse FFTs.  Destruct the class when you are done using it.
+and/or backward FFTs.  Destruct the class when you are done using it.
 
 Example code to do all of this for 3d FFTs in C++ is "shown
 below"_#code.  This code is a copy of the test/simple.cpp file.  There
@@ -37,7 +37,7 @@ classes:
 "setup_memory()"_api_setup.html = caller provide memory for FFT to use
 "set()"_api_setup.html = set a parameter affecting how FFT is performed
 "tune()"_api_tune.html = auto-tune paramters that affect how FFT is performed
-"compute()"_api_compute.html = compute a single forward or inverse FFT
+"compute()"_api_compute.html = compute a single forward or backward FFT
 "only_1d_ffts()"_api_stats.html = compute just 1d FFTs, no data movement
 "only_remaps()"_api_stats.html = just data movement, no FFTs
 "only_one_remap()"_api_stats.html = just one pass of data movement
@@ -63,7 +63,7 @@ classes:
 Simple example code :h3,link(code)
 
 These files in the text dir of the fftMPI distribution compute
-a forward/inverse FFT on any number of procs.  The size of the
+a forward/backward FFT on any number of procs.  The size of the
 FFT is hardcoded at the top of the file.  Each file is about 150
 lines with comments:
 
@@ -88,7 +88,7 @@ The C++ code is in the next section.
 
 :line
 
-// Compute a forward/inverse double precision complex FFT using fftMPI
+// Compute a forward/backward double precision complex FFT using fftMPI
 // change FFT size by editing 3 "FFT size" lines
 // run on any number of procs :pre
 
@@ -207,7 +207,7 @@ int main(int narg, char **args)
 
   double timestart = MPI_Wtime();
   fft->compute(work,work,1);        // forward FFT
-  fft->compute(work,work,-1);       // inverse FFT
+  fft->compute(work,work,-1);       // backward FFT
   double timestop = MPI_Wtime(); :pre
 
   if (me == 0) \{

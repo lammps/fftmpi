@@ -119,7 +119,7 @@ recvsize.
 :line
 
 If the "scaled" variable is 1, then a forward FFT followed by an
-inverse FFT will return values equal to the initial FFT grid values.
+backward FFT will return values equal to the initial FFT grid values.
 If the "scaled" variable is 0, then the same operation would produce
 final values that are a factor of N larger than the initial values,
 where N = total # of points in the FFT grid (3d or 2d).
@@ -139,7 +139,7 @@ points in the nmid dimension are separated by stride nfast in memory,
 and points in the nslow dimension are separated by stride nfast*nmid.
 
 The "in/out ijk lo/hi" indices define the tile of the 3d or 2d global
-grid that each processor owns before and after a forward or inverse
+grid that each processor owns before and after a forward or backward
 FFT is computed.  See the "compute"_compute.html doc page for details
 Again, i/j/k correspond to fast/mid/slow, NOT to x/y/z.
 

@@ -13,7 +13,7 @@ rearrange data, but not perform an FFT.
 class and call setup() once to define how the FFT grid is distributed
 across processors for both input to and output from the FFT.  Then
 invoke the compute() method as many times as needed to perform forward
-and/or inverse FFTs.  Destruct the class when you are done using it.
+and/or backward FFTs.  Destruct the class when you are done using it.
 </P>
 <P>Example code to do all of this for 3d FFTs in C++ is <A HREF = "#code">shown
 below</A>.  This code is a copy of the test/simple.cpp file.  There
@@ -38,7 +38,7 @@ classes:
 <LI><A HREF = "api_setup.html">setup_memory()</A> = caller provide memory for FFT to use
 <LI><A HREF = "api_setup.html">set()</A> = set a parameter affecting how FFT is performed
 <LI><A HREF = "api_tune.html">tune()</A> = auto-tune paramters that affect how FFT is performed
-<LI><A HREF = "api_compute.html">compute()</A> = compute a single forward or inverse FFT
+<LI><A HREF = "api_compute.html">compute()</A> = compute a single forward or backward FFT
 <LI><A HREF = "api_stats.html">only_1d_ffts()</A> = compute just 1d FFTs, no data movement
 <LI><A HREF = "api_stats.html">only_remaps()</A> = just data movement, no FFTs
 <LI><A HREF = "api_stats.html">only_one_remap()</A> = just one pass of data movement
@@ -65,7 +65,7 @@ classes:
 <H3><A NAME = "code"></A>Simple example code 
 </H3>
 <P>These files in the text dir of the fftMPI distribution compute
-a forward/inverse FFT on any number of procs.  The size of the
+a forward/backward FFT on any number of procs.  The size of the
 FFT is hardcoded at the top of the file.  Each file is about 150
 lines with comments:
 </P>
@@ -90,7 +90,7 @@ In the simple source codes, you could replace "3d" by "2d" for 2d FFTs.
 </P>
 <HR>
 
-<PRE>// Compute a forward/inverse double precision complex FFT using fftMPI
+<PRE>// Compute a forward/backward double precision complex FFT using fftMPI
 // change FFT size by editing 3 "FFT size" lines
 // run on any number of procs 
 </PRE>
@@ -209,7 +209,7 @@ int precision = 2;
 </PRE>
 <PRE>  double timestart = MPI_Wtime();
   fft->compute(work,work,1);        // forward FFT
-  fft->compute(work,work,-1);       // inverse FFT
+  fft->compute(work,work,-1);       // backward FFT
   double timestop = MPI_Wtime(); 
 </PRE>
 <PRE>  if (me == 0) {

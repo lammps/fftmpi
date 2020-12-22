@@ -126,14 +126,14 @@ across processors before and after the FFT.
 
 The -n option is the number of iterations (FFTs) to perform.  Note
 that for modes 0 and 1, each iteration will involve 2 FFTs (forward
-and inverse).
+and backward).
 
 The -m option selects the mode, which chooses between full FFTs versus
 convolution FFTs and determines what 1 iteration means.  For full
 FFTs, a forward FFT returns data to its original decomposition.
-Likewise for an inverse FFT.  For convolution FFTS, the data is left
+Likewise for an backward FFT.  For convolution FFTS, the data is left
 in a z-pencil decomposition after a 3d forward FFT or a y-pencil
-decomposition after a 2d forward FFT.  The inverse FFT starts from the
+decomposition after a 2d forward FFT.  The backward FFT starts from the
 z- or y-pencil decomposition and returns the data to its original
 decomposition.
 
@@ -179,7 +179,7 @@ the volume of output can be immense.
 The -v option verifies a correct result after all the FFTs are
 complete.  FFT is performed.  The results for each grid point should
 be within epsilon of the starting values.  It can only be used for
-modes 0 and 1, when both forward and inverse FFTs are performed.
+modes 0 and 1, when both forward and backward FFTs are performed.
 
 :line
 
@@ -352,5 +352,5 @@ and from z pencils to final grid (same as initial grid).  Depending on
 the choice of mode, some of these remaps may not be performed.  Also,
 for modes 0,1 there are 2 FFTs per iteration, so the per-remap timings
 are averaged over the communication required in both the forward and
-inverse directions.  E.g. remap #3 would be the average time for y to
-z pencil for the forward FFT, and z to y pencil for the inverse FFT.
+backward directions.  E.g. remap #3 would be the average time for y to
+z pencil for the forward FFT, and z to y pencil for the backward FFT.

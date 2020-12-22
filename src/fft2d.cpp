@@ -47,6 +47,8 @@ using namespace FFTMPI_NS;
 #define NFACTOR 50
 #define BIG 1.0e20
 
+enum{FORWARD=1,BACKWARD=-1};
+
 #ifdef FFT_LONGLONG_TO_LONG
 #define MPI_FFT_BIGINT MPI_LONG
 #else
@@ -528,7 +530,7 @@ void FFT2d::compute(FFT_SCALAR *in, FFT_SCALAR *out, int flag)
 
   FFT_SCALAR *data = out;
 
-  if (flag == 1 || inout_layout_same) {
+  if (flag == FORWARD || inout_layout_same) {
 
     if (remap_prefast) remap(in,out,remap_prefast);
     else if (in != out) memcpy(out,in,insize*sizeof(FFT_SCALAR));
@@ -542,8 +544,6 @@ void FFT2d::compute(FFT_SCALAR *in, FFT_SCALAR *out, int flag)
     }
 
     if (remap_postslow) remap(data,data,remap_postslow);
-
-    if (flag == 1 && scaled && !remaponly) scale_ffts((FFT_DATA *) data);
 
   } else {
 
@@ -560,6 +560,8 @@ void FFT2d::compute(FFT_SCALAR *in, FFT_SCALAR *out, int flag)
 
     if (remap_postfast) remap(in,out,remap_postfast);
   }
+
+  if (flag == BACKWARD && scaled && !remaponly) scale_ffts((FFT_DATA *) data);
 }
 
 /* ----------------------------------------------------------------------
@@ -595,7 +597,7 @@ void FFT2d::only_remaps(FFT_SCALAR *in, FFT_SCALAR *out, int flag)
 
   FFT_SCALAR *data = out;
 
-  if (flag == 1 || inout_layout_same) {
+  if (flag == FORWARD || inout_layout_same) {
 
     if (remap_prefast) remap(in,out,remap_prefast);
     else if (in != out) memcpy(out,in,insize*sizeof(FFT_SCALAR));
@@ -631,7 +633,7 @@ void FFT2d::only_one_remap(FFT_SCALAR *in, FFT_SCALAR *out, int flag, int which)
   if (!setup_memory_flag) 
     error->all("Cannot perform an FFT remap before setup_memory");
 
-  if (flag == 1 || inout_layout_same) {
+  if (flag == FORWARD || inout_layout_same) {
     if (which == 1) {
       if (remap_prefast) remap(in,out,remap_prefast);
       else if (in != out) memcpy(out,in,insize*sizeof(FFT_SCALAR));
@@ -1324,7 +1326,7 @@ void FFT2d::setup_ffts()
 
 void FFT2d::perform_ffts(FFT_DATA *data, int flag, FFT1d *plan)
 {
-  if (flag == -1) DftiComputeForward(plan->handle,data);
+  if (flag == FORWARD) DftiComputeForward(plan->handle,data);
   else DftiComputeBackward(plan->handle,data);
 }
 
@@ -1368,7 +1370,7 @@ void FFT2d::setup_ffts()
 
 void FFT2d::perform_ffts(FFT_DATA *data, int flag, FFT1d *plan)
 {
-  if (flag == -1) fftw(plan->plan_forward,plan->n,data,1,plan->length,NULL,0,0);
+  if (flag == FORWARD) fftw(plan->plan_forward,plan->n,data,1,plan->length,NULL,0,0);
   else fftw(plan->plan_backward,plan->n,data,1,plan->length,NULL,0,0);
 }
 
@@ -1419,7 +1421,7 @@ void FFT2d::setup_ffts()
 
 void FFT2d::perform_ffts(FFT_DATA *data, int flag, FFT1d *plan)
 {
-  if (flag == -1) FFTW_API(execute_dft)(plan->plan_forward,data,data);
+  if (flag == FORWARD) FFTW_API(execute_dft)(plan->plan_forward,data,data);
   else FFTW_API(execute_dft)(plan->plan_backward,data,data);
 }
 
@@ -1468,7 +1470,7 @@ void FFT2d::perform_ffts(FFT_DATA *data, int flag, FFT1d *plan)
   int length = plan->length;
   int total = plan->total;
 
-  if (flag == -1) {
+  if (flag == FORWARD) {
     kiss_fft_cfg plan_forward = plan->plan_forward;
     for (int offset = 0; offset < total; offset += length)
       kiss_fft(plan_forward,&data[offset],&data[offset]);

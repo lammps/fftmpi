@@ -4,7 +4,7 @@
 <H3>API for FFT compute() 
 </H3>
 <P>This fftMPI method can be called as many times as desired to perform
-forward and inverse FFTs for a specific grid size and layout across
+forward and backward FFTs for a specific grid size and layout across
 processors.  The code examples are for 3d FFTs.  Just replace "3d" by
 "2d" for 2d FFTs.
 </P>
@@ -41,7 +41,7 @@ of a 2d or 3d FFT, fftsize may be larger than the number of grid
 points a processor initially owns.
 </P>
 <P>When flag is set to 1, a forward FFT is performed.  When flag is set
-to -1, an inverse FFT is performed.
+to -1, a backward FFT is performed.
 </P>
 <P>For a forward FFT, the input data (in pointer) is a "tile" of grid
 points defined by the "in i/j/k lo/hi" indices specified in the
@@ -51,7 +51,7 @@ nslow" arguments.  Similarly, the output data (out pointer) is a
 ordered by permutation of the "nfast, nmid, nslow" arguments as
 specified by the permute flag.
 </P>
-<P>For an inverse FFT, it is the opposite.  The input data (in pointer)
+<P>For a backward FFT, it is the opposite.  The input data (in pointer)
 is a "tile" of grid points defined by the "out i/j/k lo/hi" indices
 with ordering implied by the permute flag.  And the output data (out
 pointer) is a "tile" of grid points defined by the "in i/j/k lo/hi"
@@ -68,7 +68,7 @@ indices and orderd by the "nfast, nmid, nslow" arguments of the
 work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); 
 </PRE>
 <PRE>fft->compute(work,work,1);     // forward FFT
-fft->compute(work,work,-1);    // inverse FFT 
+fft->compute(work,work,-1);    // backward FFT 
 </PRE>
 <P>The "fft" pointer is created by instantiating an instance of the
 <A HREF = "api_create.html">FFT3d class</A>.
@@ -85,7 +85,7 @@ FFT_SCALAR *work;
 work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); 
 </PRE>
 <PRE>fft3d_compute(fft,work,work,1);    // forward FFT
-fft3d_compute(fft,work,work,-1);   // inverse FFT 
+fft3d_compute(fft,work,work,-1);   // backward FFT 
 </PRE>
 <P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
 or "float" (32-bit) for double-precision or single-precision FFTs.
@@ -100,7 +100,7 @@ real(8), allocatable, target :: work(:)      ! double precision
 allocate(work(2*fftsize)) 
 </PRE>
 <PRE>call fft3d_compute(fft,c_loc(work),c_loc(work),1)     ! forward FFT
-call fft3d_compute(fft,c_loc(work),c_loc(work),-1)    ! inverse FFT 
+call fft3d_compute(fft,c_loc(work),c_loc(work),-1)    ! backward FFT 
 </PRE>
 <HR>
 
@@ -111,7 +111,7 @@ work = np.zeros(2*fftsize,np.float32)    # single precision
 work = np.zeros(2*fftsize,np.float)      # double precision 
 </PRE>
 <PRE>fft.compute(work,work,1)                 # forward FFT
-fft.compute(work,work,-1)                # inverse FFT 
+fft.compute(work,work,-1)                # backward FFT 
 </PRE>
 <P>The "fft" object is created by instantiating an instance
 of the <A HREF = "api_create.html">FFT3dMPI class</A>.

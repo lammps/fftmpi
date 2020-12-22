@@ -157,7 +157,7 @@ pencils of a 3d array.  To save communication inside the FFT, the
 output layout is different, with each processor owning a few columns
 (2d) or planes or pencils in a different dimension (3d).  Then a
 convolution can be performed by the application after the forward FFT,
-followed by an inverse FFT that returns the data to its original
+followed by an backward FFT that returns the data to its original
 layout. 
 
 <LI>Each processor initially owns a 2d or 3d subsection of the grid
