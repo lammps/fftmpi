@@ -1,6 +1,6 @@
 <HEAD>
 <TITLE>fftMPI Users Manual</TITLE>
-<META NAME="docnumber" CONTENT="1 Oct 2018 version">
+<META NAME="docnumber" CONTENT="22 Dec 2020 version">
 <META NAME="author" CONTENT="http://fftmpi.sandia.gov - Sandia National Laboratories">
 <META NAME="copyright" CONTENT="Copyright (2018) Sandia Corporation.  This software and manual is distributed under the GNU Lesser General Public License.">
 </HEAD>
@@ -18,7 +18,7 @@
 <H1></H1>
 
 Manual for the fftMPI library :c,h2
-1 Oct 2018 version :c,h4
+22 Dec 2020 version :c,h4
 
 The fftMPI library is designed to perform parallel 2d or 3d
 complex-to-complex Fast Fourier Transforms (FFTs) efficiently on
