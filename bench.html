@@ -1,0 +1,103 @@
+<HTML>
+<CENTER><A HREF = "index.html">fftMPI website</A> 
+</CENTER>
+
+
+<HR>
+
+<H3>Benchmarks 
+</H3>
+<P>These are timings for 3d FFTs (double precision, complex-to-complex)
+using the fftMPI library on different machines and node hardware
+(see details below).
+</P>
+<P>FFTs of different sizes were run on different node counts.  The
+Gflop/node performance is listed as 5Nlog2(N) flops per FFT / CPU
+time.  N is the total count of 3d grid points.  E.g. N = 262144 for a
+64x64x64 FFT.  The initial spatial decomposition of the FFT grid was
+into 3d bricks (one per MPI task).  The final decomposition was the
+same.  So the FFT cost includes operations to both remap the grid
+before performing the initial set of 1d FFTs, and to remap the grid
+after the final set of 1d FFTs.
+</P>
+<P>These tests were run in early 2018 using the fftmpi/test/test3d.cpp
+code included in the fftMPI distribution.  Click on a plot to
+view a larger version.
+</P>
+<A HREF = "bench/chama_SandyBridge.jpg"><IMG SRC = "bench/chama_SandyBridge_small.jpg"></A>
+
+<A HREF = "bench/edison_IvyBridge.jpg"><IMG SRC = "bench/edison_IvyBridge_small.jpg"></A>
+
+<A HREF = "bench/cori_Haswell.jpg"><IMG SRC = "bench/cori_Haswell_small.jpg"></A>
+
+<A HREF = "bench/solo_Broadwell.jpg"><IMG SRC = "bench/solo_Broadwell_small.jpg"></A>
+
+<A HREF = "bench/cori_KNL.jpg"><IMG SRC = "bench/cori_KNL_small.jpg"></A>
+
+<P>The downward slope of the curves from left to right is decreasing
+parallel efficiency due to increased communication costs as more nodes
+and MPI tasks are used.
+</P>
+<UL><LI><A HREF = "bench/chama_SandyBridge.html">Table for SandyBridge</A>
+<LI><A HREF = "bench/edison_IvyBridge.html">Table for IvyBridge</A>
+<LI><A HREF = "bench/cori_Haswell.html">Table for Haswell</A>
+<LI><A HREF = "bench/solo_Broadwell.html">Table for Broadwell</A>
+<LI><A HREF = "bench/cori_KNL.html">Table for KNL</A> 
+</UL>
+<P>The tables have a line for each data point in the corresponding plot
+with the following fields:
+</P>
+<UL><LI>Size = size of FFT grid
+<LI>Nodes = nodes used in run
+<LI>MPI = total MPI task count across all nodes
+<LI>CPU = seconds for 1 FFT, averaged over one or more forward/inverse pairs of FFTs
+<LI>Gflops = 5Nlog2(N) / CPU
+<LI>Coll = collective setting: 0 = point, 1 = all2all, 2 = combo
+<LI>Exch = exchange setting: 0 = pencil, 1 = brick
+<LI>Pack = pack setting: 0 = array, 1 = ptr, 2 = memcpy 
+</UL>
+<P>See the <A HREF = "doc/api_setup.html">setup() API</A> doc page for more details on
+the meaning of these 3 settings.  The choice of settings were
+determined by using the <A HREF = "doc/api_tune.html">tune() method</A> of fftMPI to
+auto-tune its performance for a particular FFT size and node count.
+</P>
+<HR>
+
+<P><B>Machine info</B>:
+</P>
+<P>chama = Intel SandyBridge CPUs
+</P>
+<UL><LI>Sandia 1132-node cluster
+<LI>node = dual-socket Sandy Bridge:2S:8C @ 2.6 GHz, 16 cores, no hyperthreading
+<LI>interconnect = Qlogic Infiniband 4x QDR, fat tree
+<LI>runs were made with 16 MPI tasks/node 
+</UL>
+<P>edison = Intel IvyBridge CPUs
+</P>
+<UL><LI>NERSC Cray XC30 5586-node supercomputer
+<LI>node = dual-socket Ivy Bridge @ 2.4 GHz, 24 cores + 2x hyperthreading
+<LI>interconnect = Cray Aries with Dragonfly topology
+<LI>runs were made with 48 MPI tasks/node 
+</UL>
+<P>cori = Intel Haswell CPUs
+</P>
+<UL><LI>NERSC Cray XC40 2388-node supercomputer (CPU portion)
+<LI>node = dual-socket Haswell E5-2698 v3 at 2.3 GHz, 32 cores + 2x hyperthreading
+<LI>interconnect = Cray Aries with Dragonfly topology
+<LI>runs were made with 32 MPI tasks/node 
+</UL>
+<P>cori = Intel KNLs
+</P>
+<UL><LI>NERSC Cray XC40 9688-node supercomputer (KNL portion)
+<LI>node = Knights Landing 7250 processor, 68 cores + 4x hyperthreading
+<LI>interconnect = Cray Aries with Dragonfly topology
+<LI>runs were made with 64 MPI tasks/node 
+</UL>
+<P>solo = Intel Broadwell CPUs
+</P>
+<UL><LI>Sandia 1122-node cluster
+<LI>node = dual-socket Broadwell 2.1 GHz CPU E5-2695, 36 cores + 2x hyperthreading
+<LI>interconnect = Omni-Pat
+<LI>runs were made with 36 MPI tasks/node 
+</UL>
+</HTML>

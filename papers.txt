@@ -1,0 +1,23 @@
+"fftMPI website"_fws :c
+:link(fws,index.html)
+
+:line
+
+fftMPI Papers :h3
+
+If you use fftMPI in one of your publications, please reference the
+URL of the "fftMPI website"_fws, namely http://fftmpi.sandia.gov.
+
+At some point we may write a new paper about fftMPI, in which case we
+will post a citation here.
+
+This is an older paper which includes a discussion of the basic
+algorithms used in our original "Parallel FFT Package"_oldfft, which
+are also still used in fftMPI:
+
+:link(oldfft,http://www.sandia.gov/~sjplimp/docs/fft/README.html)
+
+Particle-Mesh Ewald and rRESPA for Parallel Molecular Dynamics
+Simulations, S. J. Plimpton, R. Pollock, M. Stevens, in Proc of the
+Eighth SIAM Conference on Parallel Processing for Scientific
+Computing, Minneapolis, MN, March 1997.

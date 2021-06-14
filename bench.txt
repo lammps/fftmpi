@@ -1,0 +1,95 @@
+"fftMPI website"_fws :c
+:link(fws,index.html)
+
+:line
+
+Benchmarks :h3
+
+These are timings for 3d FFTs (double precision, complex-to-complex)
+using the fftMPI library on different machines and node hardware
+(see details below).
+
+FFTs of different sizes were run on different node counts.  The
+Gflop/node performance is listed as 5Nlog2(N) flops per FFT / CPU
+time.  N is the total count of 3d grid points.  E.g. N = 262144 for a
+64x64x64 FFT.  The initial spatial decomposition of the FFT grid was
+into 3d bricks (one per MPI task).  The final decomposition was the
+same.  So the FFT cost includes operations to both remap the grid
+before performing the initial set of 1d FFTs, and to remap the grid
+after the final set of 1d FFTs.
+
+These tests were run in early 2018 using the fftmpi/test/test3d.cpp
+code included in the fftMPI distribution.  Click on a plot to
+view a larger version.
+
+:image(bench/chama_SandyBridge_small.jpg,bench/chama_SandyBridge.jpg)
+:image(bench/edison_IvyBridge_small.jpg,bench/edison_IvyBridge.jpg)
+:image(bench/cori_Haswell_small.jpg,bench/cori_Haswell.jpg)
+:image(bench/solo_Broadwell_small.jpg,bench/solo_Broadwell.jpg)
+:image(bench/cori_KNL_small.jpg,bench/cori_KNL.jpg)
+
+The downward slope of the curves from left to right is decreasing
+parallel efficiency due to increased communication costs as more nodes
+and MPI tasks are used.
+
+"Table for SandyBridge"_bench/chama_SandyBridge.html
+"Table for IvyBridge"_bench/edison_IvyBridge.html
+"Table for Haswell"_bench/cori_Haswell.html
+"Table for Broadwell"_bench/solo_Broadwell.html
+"Table for KNL"_bench/cori_KNL.html :ul
+
+The tables have a line for each data point in the corresponding plot
+with the following fields:
+
+Size = size of FFT grid
+Nodes = nodes used in run
+MPI = total MPI task count across all nodes
+CPU = seconds for 1 FFT, averaged over one or more forward/inverse pairs of FFTs
+Gflops = 5Nlog2(N) / CPU
+Coll = collective setting: 0 = point, 1 = all2all, 2 = combo
+Exch = exchange setting: 0 = pencil, 1 = brick
+Pack = pack setting: 0 = array, 1 = ptr, 2 = memcpy :ul
+
+See the "setup() API"_doc/api_setup.html doc page for more details on
+the meaning of these 3 settings.  The choice of settings were
+determined by using the "tune() method"_doc/api_tune.html of fftMPI to
+auto-tune its performance for a particular FFT size and node count.
+
+:line
+
+[Machine info]:
+
+chama = Intel SandyBridge CPUs
+
+Sandia 1132-node cluster
+node = dual-socket Sandy Bridge:2S:8C @ 2.6 GHz, 16 cores, no hyperthreading
+interconnect = Qlogic Infiniband 4x QDR, fat tree
+runs were made with 16 MPI tasks/node :ul
+
+edison = Intel IvyBridge CPUs
+
+NERSC Cray XC30 5586-node supercomputer
+node = dual-socket Ivy Bridge @ 2.4 GHz, 24 cores + 2x hyperthreading
+interconnect = Cray Aries with Dragonfly topology
+runs were made with 48 MPI tasks/node :ul
+
+cori = Intel Haswell CPUs
+
+NERSC Cray XC40 2388-node supercomputer (CPU portion)
+node = dual-socket Haswell E5-2698 v3 at 2.3 GHz, 32 cores + 2x hyperthreading
+interconnect = Cray Aries with Dragonfly topology
+runs were made with 32 MPI tasks/node :ul
+
+cori = Intel KNLs
+
+NERSC Cray XC40 9688-node supercomputer (KNL portion)
+node = Knights Landing 7250 processor, 68 cores + 4x hyperthreading
+interconnect = Cray Aries with Dragonfly topology
+runs were made with 64 MPI tasks/node :ul
+
+solo = Intel Broadwell CPUs
+
+Sandia 1122-node cluster
+node = dual-socket Broadwell 2.1 GHz CPU E5-2695, 36 cores + 2x hyperthreading
+interconnect = Omni-Pat
+runs were made with 36 MPI tasks/node :ul
