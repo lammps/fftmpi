@@ -1,0 +1,119 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>API for FFT compute() 
+</H3>
+<P>This fftMPI method can be called as many times as desired to perform
+forward and backward FFTs for a specific grid size and layout across
+processors.  The code examples are for 3d FFTs.  Just replace "3d" by
+"2d" for 2d FFTs.
+</P>
+<HR>
+
+<P>API:
+</P>
+<PRE>void compute(FFT_SCALAR *in, FFT_SCALAR *out, int flag); 
+</PRE>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<P>The "in" pointer is the input data to the FFT, stored as a 1d vector of
+contiguous memory for the FFT grid points this processor owns.
+</P>
+<P>The "out" pointer is the output data from the FFT, also stored as a 1d
+vector of contiguous memory for the FFT grid points this processor
+owns.
+</P>
+<P>What is stored in the in and out 1d vectors are "tiles" of 2d or 3d
+FFT grid data that each processor owns.  The extent of the tiles and
+the way the data is ordered is defined by the <A HREF = "api_setup.html">setup()
+method</A>.  The <A HREF = "layout.html">layout</A> doc page explains
+what tiles are and gives more details on how the FFT data is ordered
+as a 1d vector.
+</P>
+<P>Note that in and out can be the same pointer, in which case the FFT is
+computed "in place", although there is additional internal memory
+allocated by fftMPI to migrate data to new processors and reorder it.
+The <A HREF = "api_setup.html">setup() method</A> returns a variable "fftsize" which
+should be used to allocate the necessary size of the in and out
+vectors.  Because this memory is used by fftMPI at intermediate stages
+of a 2d or 3d FFT, fftsize may be larger than the number of grid
+points a processor initially owns.
+</P>
+<P>When flag is set to 1, a forward FFT is performed.  When flag is set
+to -1, a backward FFT is performed.
+</P>
+<P>For a forward FFT, the input data (in pointer) is a "tile" of grid
+points defined by the "in i/j/k lo/hi" indices specified in the
+<A HREF = "api_setup.html">setup() method</A> and ordered by its "nfast, nmid,
+nslow" arguments.  Similarly, the output data (out pointer) is a
+"tile" of grid points defined by the "out i/j/k lo/hi" indices and
+ordered by permutation of the "nfast, nmid, nslow" arguments as
+specified by the permute flag.
+</P>
+<P>For a backward FFT, it is the opposite.  The input data (in pointer)
+is a "tile" of grid points defined by the "out i/j/k lo/hi" indices
+with ordering implied by the permute flag.  And the output data (out
+pointer) is a "tile" of grid points defined by the "in i/j/k lo/hi"
+indices and orderd by the "nfast, nmid, nslow" arguments of the
+<A HREF = "api_setup.html">setup() method</A>.
+</P>
+<HR>
+
+<HR>
+
+<P>C++:
+</P>
+<PRE>FFT_SCALAR *work;
+work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); 
+</PRE>
+<PRE>fft->compute(work,work,1);     // forward FFT
+fft->compute(work,work,-1);    // backward FFT 
+</PRE>
+<P>The "fft" pointer is created by instantiating an instance of the
+<A HREF = "api_create.html">FFT3d class</A>.
+</P>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<HR>
+
+<P>C:
+</P>
+<PRE>void *fft;     // set by <A HREF = "api_create.html">fft3d_create()</A>
+FFT_SCALAR *work;
+work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); 
+</PRE>
+<PRE>fft3d_compute(fft,work,work,1);    // forward FFT
+fft3d_compute(fft,work,work,-1);   // backward FFT 
+</PRE>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<HR>
+
+<P>Fortran:
+</P>
+<PRE>type(c_ptr) :: fft    ! set by <A HREF = "api_create.html">fft3d_create()</A>
+real(4), allocatable, target :: work(:)      ! single precision
+real(8), allocatable, target :: work(:)      ! double precision
+allocate(work(2*fftsize)) 
+</PRE>
+<PRE>call fft3d_compute(fft,c_loc(work),c_loc(work),1)     ! forward FFT
+call fft3d_compute(fft,c_loc(work),c_loc(work),-1)    ! backward FFT 
+</PRE>
+<HR>
+
+<P>Python:
+</P>
+<PRE>import numpy as np
+work = np.zeros(2*fftsize,np.float32)    # single precision
+work = np.zeros(2*fftsize,np.float)      # double precision 
+</PRE>
+<PRE>fft.compute(work,work,1)                 # forward FFT
+fft.compute(work,work,-1)                # backward FFT 
+</PRE>
+<P>The "fft" object is created by instantiating an instance
+of the <A HREF = "api_create.html">FFT3dMPI class</A>.
+</P>
+</HTML>

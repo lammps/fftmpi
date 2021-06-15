@@ -1,0 +1,360 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>Running the test programs 
+</H3>
+<P>The test programs (apps) in the test dir illustrate how to use fftMPI.
+They also enable experiementation with and benchmarking of the various
+methods and options that fftMPI supports.  All of the apps can be
+launched on any number of processors (including a single processor)
+via mpirun.
+</P>
+<P>Here are example launch commands.  Those without a leading mpirun will
+run on a single processor:
+</P>
+<PRE>% simple
+% simple_f90
+% mpirun -np 12 simple
+% mpirun -np 4 simple_c
+% mpirun -np 8 python simple.py 
+</PRE>
+<P>The simple apps take no command-line arguments.  To change the size of
+the FFT you need to edit the 3 "FFT size" lines near the top of each
+file.
+</P>
+<PRE>% test3d -g 100 100 100 -n 50
+% test3d_c -g 100 100 100 -n 50 -m 1 -i step
+% mpirun -np 8 test3d_f90 -g 100 100 100 -n 50 -c all
+% mpirun -np 16 test2d -g 1000 2000 -n 100 -t details
+% mpirun -np 4 test2d_c -g 500 500 -n 1000 -i 492893 -v
+% test2d_f90 -g 256 256 -n 1000
+% python test3d.py -g 100 100 100 -n 50
+% mpirun -np 16 python test3d.py -g 100 100 100 -n 50 
+</PRE>
+<P>The test apps take a variety of optional command-line arguments, all
+of which are explained below.
+</P>
+<P>IMPORTANT NOTE: To run the Python apps, you must enable Python to find
+the fftMPI shared library and src/fftmpi.py wrapper script.  To run
+the Python apps in parallel, you must have mpi4py installed in your
+Python.  See the <A HREF = "usage.html">usage</A> doc page for details on both these
+topics.
+</P>
+<HR>
+
+<H4>Command-line arguments: 
+</H4>
+<P>All possible command-line arguments are listed here.  All the
+setttings have default values, so you only need to specify those you
+wish to change.  Additional details are explained below.  An
+explanation of the output of the test programs is also given below.
+</P>
+<P>The test3d (C++) and test3d_c (C) and test3d.py (Python) apps perform
+3d FFTs and use identical command-line arguments.  The test2d (C++)
+and test2d_c (C) and test2d.py (Python) apps perform 2d FFTs and take
+identical arguments to the 3d apps except as noted below for -g, -pin,
+or -pout.
+</P>
+<P>Note that all the 3d apps should produce identical numerical results,
+and give very similar performance to each other, since the work is
+being done by the fftMPI library.  Ditto for the 2d apps.
+</P>
+<HR>
+
+<H4>Command-line syntax: 
+</H4>
+<PRE>% test3d switch args switch args ...
+% test2d switch args switch args ... 
+</PRE>
+<PRE>  -h = print help message
+  -g Nx Ny Nz = grid size (default = 8 8 8) (no Nz for 2d)
+  -pin Px Py Pz = proc grid (default = 0 0 0) (no Pz for 2d)
+     specify 3d grid of procs for initial partition
+     0 0 0 = code chooses Px Py Pz, will be bricks (rectangles for 2d)
+  -pout Px Py Pz = proc grid (default = 0 0 0) (no Pz for 2d)
+     specify 3d grid of procs for final partition
+     0 0 0 = code chooses Px Py Pz
+             will be bricks for mode = 0/2 (rectangles for 2d)
+             will be z pencils for mode = 1/3 (y pencils for 2d)
+  -n Nloop = iteration count (default = 1)
+             can use 0 if -tune enabled, then will be set by tuning operation
+  -m 0/1/2/3 = FFT mode (default = 0)
+     0 = 1 iteration = forward full FFT, backward full FFT
+     1 = 1 iteration = forward convolution FFT, backward convolution FFT
+     2 = 1 iteration = just forward full FFT
+     3 = 1 iteration = just forward convolution FFT
+     full FFT returns data to original layout
+     forward convolution FFT is brick -> z-pencil (y-pencil in 2d)
+     backward convolution FFT is z-pencil -> brick (y-pencil in 2d)
+  -i zero/step/index/82783 = initialization (default = zero)
+     zero = initialize grid with 0.0
+     step = initialize with 3d step function (2d step function in 2d)
+     index = ascending integers 1 to Nx+Ny+Nz (Nx+Ny in 2d)
+     digits = random number seed
+  -tune nper tmax extra
+     nper = # of FFTs per trial run
+     tmax = tune within tmax CPU secs, 0.0 = unlimited
+     extra = 1 for detailed timing of trial runs, else 0
+  -c point/all/combo = communication flag (default = point)
+     point = point-to-point comm
+     all = use MPI_all2all collective
+     combo = point for pencil2brick, all2all for pencil2pencil
+  -e pencil/brick = exchange flag (default = pencil)
+     pencil = pencil to pencil data exchange (4 stages for full FFT) (3 for 2d)
+     brick = brick to pencil data exchange (6 stages for full FFT) (4 for 2d)
+  -p array/ptr/memcpy
+     pack/unpack methods for data remapping (default = memcpy)
+     array = array based
+     ptr = pointer based
+     memcpy = memcpy based
+  -t = provide more timing details (not set by default)
+     include timing breakdown, not just summary
+  -r = remap only, no 1d FFTs (not set by default)
+     useful for debugging
+  -o = output initial/final grid (not set by default)
+     only useful for small problems
+  -v = verify correctness of answer (not set by default)
+     only possible for FFT mode = 0/1 
+</PRE>
+<HR>
+
+<H4>More details on the command-line arguments: 
+</H4>
+<P>The -g option is for the FFT grid size.
+</P>
+<P>The -pin and -pout options determine how the FFT grid is partitioned
+across processors before and after the FFT.
+</P>
+<P>The -n option is the number of iterations (FFTs) to perform.  Note
+that for modes 0 and 1, each iteration will involve 2 FFTs (forward
+and backward).
+</P>
+<P>The -m option selects the mode, which chooses between full FFTs versus
+convolution FFTs and determines what 1 iteration means.  For full
+FFTs, a forward FFT returns data to its original decomposition.
+Likewise for an backward FFT.  For convolution FFTS, the data is left
+in a z-pencil decomposition after a 3d forward FFT or a y-pencil
+decomposition after a 2d forward FFT.  The backward FFT starts from the
+z- or y-pencil decomposition and returns the data to its original
+decomposition.
+</P>
+<P>The -i option determines how the values in the FFT grid are
+initialized.
+</P>
+<P>The -tune option performs an auto-tuning operation before it performs
+the FFTs.  It sets the values that could be otherwise specified by the
+-c, -e, -p options.  So if those options are also specified, they are
+ignored if -tune is specified.  See the <A HREF = "api_tune.html">library tune
+API</A> for details on the auto-tuning procedure.
+</P>
+<P>The -c option is specified as point or all or combo.  It determines
+whether point2point or all2all communication is performed when the FFT
+grid data is moved to new processors between successive 1d FFTs.  See
+the <A HREF = "api_setup.html">library setup API</A> for details.
+</P>
+<P>The -e option is specified as pencil or brick.  For 3d FFTs with
+pencil, there are 4 communication stages for a full FFT: brick ->
+x-pencil -> y-pencil -> z-pencil -> brick.  Or 3 for a 3d convoultion
+FFT (last stage is skipped).  Or 3 for a full 2d FFT (no z-pencil
+decomposition).  Or 2 for a 2d convolution FFT.  For 3d FFTs with
+brick, there are 6 communication stages for a full FFT: brick ->
+x-pencil -> brick -> y-pencil -> brick -> z-pencil -> brick.  Or 5 for
+a 3d convoultion FFT (last stage is skipped).  Or 4 for a full 2d FFT
+(no z-pencil decomposition).  Or 3 for a 2d convolution FFT.  See the
+<A HREF = "api_setup.html">library setup API</A> for details.
+</P>
+<P>The -p option is specified as array or ptr or memcpy.  This setting
+determins what low-level methods are used for packing and unpacking
+FFT data that is sent as messages via MPI.  See the <A HREF = "api_setup.html">library setup
+API</A> for details.
+</P>
+<P>The -t option produces more timing output by the test app.
+</P>
+<P>The -r option performs no 1d FFTs, it only moves the FFT grid data
+(remap) between processors.
+</P>
+<P>The -o option prints out grid values before and after the FFTs and is
+useful for debugging.  It should only be used for small grids, else
+the volume of output can be immense.
+</P>
+<P>The -v option verifies a correct result after all the FFTs are
+complete.  FFT is performed.  The results for each grid point should
+be within epsilon of the starting values.  It can only be used for
+modes 0 and 1, when both forward and backward FFTs are performed.
+</P>
+<HR>
+
+<H4>Output from test apps: 
+</H4>
+<P>This run on a desktop machine (dual-socket Broadwell CPU):
+</P>
+<PRE>% mpirun -np 16 test3d -g 128 128 128 -n 10 -t -tune 5 10.0 0 
+</PRE>
+<P>proudced the following output:
+</P>
+<PRE>3d FFTs with KISS library, precision = double
+Grid size: 128 128 128
+  initial proc grid: 2 2 4
+  x pencil proc grid: 1 4 4
+  y pencil proc grid: 4 1 4
+  z pencil proc grid: 4 4 1
+  3d brick proc grid: 2 2 4
+  final proc grid: 2 2 4
+Tuning trials & iterations: 9 5
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 0 0 2 0.030088 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 0 1 2 0.0400121 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 1 0 2 0.0360526 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 1 1 2 0.0448938 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 0 2 0.0250025 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 2 0.0238482 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 0 0.0225584 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 1 0.0203406 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 2 0.018153 0 0 0 0 0 0
+10 forward and 10 back FFTs on 16 procs
+Collective, exchange, pack methods: 2 1 2
+Memory usage (per-proc) for FFT grid = 2 MBytes
+Memory usage (per-proc) by FFT lib = 3.0008 MBytes
+Initialize grid = 0.00136495 secs
+FFT setup = 0.000128984 secs
+FFT tune = 2.7151 secs
+Time for 3d FFTs = 0.35673 secs
+  time/fft3d = 0.0178365 secs
+  flop rate for 3d FFTs = 11.4977 Gflops
+Time for 1d FFTs only = 0.127282 secs
+  time/fft1d = 0.0063641 secs
+  fraction of time in 1d FFTs = 0.356802
+Time for remaps only = 0.219896 secs
+  fraction of time in remaps = 0.616422
+Time for remap #1 = 0.028487 secs
+  fraction of time in remap #1 = 0.0798558
+Time for remap #2 = 0.065825 secs
+  fraction of time in remap #2 = 0.184523
+Time for remap #3 = 0.0849571 secs
+  fraction of time in remap #3 = 0.238155
+Time for remap #4 = 0.0452759 secs
+  fraction of time in remap #4 = 0.126919 
+</PRE>
+<HR>
+
+<H4>Annotated output from test apps: 
+</H4>
+<PRE>3d FFTs with KISS library, precision = double 
+</PRE>
+<P>What 1d FFT library was used, also single vs double precision
+</P>
+<PRE>Grid size: 128 128 128
+  initial proc grid: 2 2 4
+  x pencil proc grid: 1 4 4
+  y pencil proc grid: 4 1 4
+  z pencil proc grid: 4 4 1
+  3d brick proc grid: 2 2 4
+  final proc grid: 2 2 4 
+</PRE>
+<P>The global FFT grid size and how many processors the grid was
+partitioned by in each dimension (xyz in this case).  The initial and
+final proc grids are the partitioning for input and output to/from the
+FFTs.  The xyz pencil proc grids are the partitioning for intermediate
+steps when "-e pencil" is used.  The 3d brick proc grid is the
+intermediate step when "-e brick" is used.
+</P>
+<P>Tuning trials & iterations: 9 5
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 0 0 2 0.030088 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 0 1 2 0.0400121 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 1 0 2 0.0360526 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 1 1 2 0.0448938 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 0 2 0.0250025 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 2 0.0238482 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 0 0.0225584 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 1 0.0203406 0 0 0 0 0 0
+  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: 2 1 2 0.018153 0 0 0 0 0 0
+</P>
+<P>This output is only produced when the "-tune" option is used.  In this
+case 9 tuning trials were run, each for 5 iterations (5 or 10 FFTs
+depending on the -m mode).  The "coll exch pack" settings for the 9
+runs are listed next.  These correspond to the "-c", "-e", "-p"
+settings described above:
+</P>
+<UL><LI>-c: 0 = point, 1 = all, 2 = combo
+<LI>-e: 0 = pencil, 1 = brick
+<LI>-p: 0 = array, 1 = ptr, 2 = memcpy 
+</UL>
+<P>The timings for each trial are listed following the coll/exch/pack settings.
+The 3dFFT timing is the total time for the trial.  In this case
+the other timings are 0.0 because the -tune extra setting was 0.  If it
+had been 1, then an additional timing breakdown for each trial run
+would be output.
+</P>
+<P>In this case all 6 permutations of "-c" and "-e" were tried.  Then the
+3 -p options were used with the fastest of the previous 6 runs.  The
+fastest run of all was with -c = 2 (combo), -e = 1 (brick), and -p = 2
+(memcpy).
+</P>
+<P>The number of trials and the number of iterations/trial can be adjusted
+by the tune() method of fffMPI to limit the tuning to the specified
+-tune tmax setting.
+</P>
+<PRE>10 forward and 10 back FFTs on 16 procs 
+</PRE>
+<PRE>Collective, exchange, pack methods: 2 1 2
+Memory usage (per-proc) for FFT grid = 2 MBytes
+Memory usage (per-proc) by FFT lib = 3.0008 MBytes 
+</PRE>
+<P>These are the number of FFTs that were performed for the timing
+results that follow.  They were run with the coll/exch/pack settings
+shown, which are the optimal settings from the tuning trials in this
+case.  The first memory usage line is for the FFT grid owned by the
+test app.  The second memory usage line is for the MPI send/receive
+buffers and other data allocated internally for this problem by
+fftMPI.
+</P>
+<PRE>Initialize grid = 0.00136495 secs
+FFT setup = 0.000128984 secs
+FFT tune = 2.7151 secs
+Time for 3d FFTs = 0.35673 secs
+  time/fft3d = 0.0178365 secs
+  flop rate for 3d FFTs = 11.4977 Gflops 
+</PRE>
+<P>This is the timing breakdown of both the setup (initialize by app, FFT
+setup by fftMPI), the tuning (if performed), and the FFTs themselves.
+The time per FFT is also give, as well as the flop rate.  There are
+5Nlog2(N) flops performed in an FFT, where N is the total number of 2d
+or 3d grid points and the log is base 2.  The flop rate is aggregate
+across all the processors.
+</P>
+<PRE>Time for 1d FFTs only = 0.127282 secs
+  time/fft1d = 0.0063641 secs
+  fraction of time in 1d FFTs = 0.356802
+Time for remaps only = 0.219896 secs
+  fraction of time in remaps = 0.616422
+Time for remap #1 = 0.028487 secs
+  fraction of time in remap #1 = 0.0798558
+Time for remap #2 = 0.065825 secs
+  fraction of time in remap #2 = 0.184523
+Time for remap #3 = 0.0849571 secs
+  fraction of time in remap #3 = 0.238155
+Time for remap #4 = 0.0452759 secs
+  fraction of time in remap #4 = 0.126919 
+</PRE>
+<P>This extra output is only produced if the "-t" option is used.  It
+gives a breakdown of where the total FFT time was spent.  The
+breakdown is roughly: total = 1d FFTs + remaps.  In this case 100% =
+36% + 62%.  And total remap = remap #1 + #2 + #3 + #4.  In this case
+62% = 8% + 12% + 24% + 13%.  The summations are not exact (i.e. they
+don't sum exactly to 100%), because the breakdown timings are
+performed by separate runs, and timings are not exactly reproducible
+from run to run.  There can also be load-imbalance effects when full
+FFTs are timed by themselves, versus individual components being run
+and timed individually.
+</P>
+<P>The remaps operations include the cost for data movement (from one
+processor to another) and data reordering (on-processor) operations.
+In this 3d case, there were 4 flavors of remap.  From initial grid to
+x pencils (#1), from x to y pencils (#2), from y to z pencils (#3),
+and from z pencils to final grid (same as initial grid).  Depending on
+the choice of mode, some of these remaps may not be performed.  Also,
+for modes 0,1 there are 2 FFTs per iteration, so the per-remap timings
+are averaged over the communication required in both the forward and
+backward directions.  E.g. remap #3 would be the average time for y to
+z pencil for the forward FFT, and z to y pencil for the backward FFT.
+</P>
+</HTML>

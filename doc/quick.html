@@ -1,0 +1,92 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>Quick tour 
+</H3>
+<P>You can quickly try out fftMPI if you
+</P>
+<UL><LI>build the fftMPI library
+<LI>build the test programs that use it
+<LI>run the test programs (apps) 
+</UL>
+<P>You can do all 3 steps in one command from the test dir, as follows:
+</P>
+<PRE>% cd fftmpi/test
+% sh Run.sh 
+</PRE>
+<P>Or you can do it step-by-step (below).
+</P>
+<P>The Run.sh script builds the apps in double precision for all
+languages (C++, C, Fortran, Python) and uses the provided KISS library
+for 1d FFTs.  If you want to use single precision or another 1d FFT
+library, see the 3-step process below.  If support for some language
+is not available on your system, those test apps will simply not
+build.
+</P>
+<P>It then runs each of the apps for one FFT size in all the languages,
+both in serial and parallel.  The apps allow for a variety of
+command-line args, which are discussed on the <A HREF = "runtest.html">runtest</A>
+doc page.
+</P>
+<P>IMPORTANT NOTE: To run the Python apps, you must enable Python to find
+the fftMPI shared library and src/fftmpi.py wrapper script.  You must
+also have mpi4py installed in your Python so it can pass an MPI
+communicator to fftMPI.  See the <A HREF = "usage.html">usage</A> doc page for
+details on both these topics.
+</P>
+<P>You can examine the source code of any of the apps in the test dir to
+see the logic and syntax for using fftMPI from your application.  They
+invoke all the methods provided by fftMPI.
+</P>
+<HR>
+
+<H4>Step 1 
+</H4>
+<P>Build fftMPI with one of these make commands.  This should produce two
+shared-library lib*.so files, for 2d and 3d FFTs.  They will use the
+default KISS FFT library for 1d FFTs, and operate on double-precision
+complex data.
+</P>
+<PRE>% cd fftmpi/src
+% make 
+</PRE>
+<P>The builds will be performed with mpicxx, which uses whatever MPI you
+have installed on your system, and wraps the C++ compiler installed on
+your system.
+</P>
+<P>The <A HREF = "compile.html">compile</A> doc page explains how to choose a different
+1d FFT library and/or change to single precision.
+</P>
+<HR>
+
+<H4>Step 2 
+</H4>
+<P>Build the test apps, written in C++, C, and Fortran 90.  This should
+produce 6 executables: test3d, test2d, test3d_c, test2d_c, test3d_f90,
+test2d_f90.  Test3d and test2d are C++ executables.  Two Python test
+apps, test2d.py and test3d.py, are also in the test dir.
+</P>
+<PRE>% cd fftmpi/test
+% make 
+</PRE>
+<P>As with step 1, The builds will be performed with mpicxx, which uses
+whatever MPI you have installed on your system, and wraps the
+C++, C, or Fortran compilers installed on your system.
+</P>
+<P>The <A HREF = "buildtest.html">buildtest</A> doc page explains how to change to
+single precision.
+</P>
+<P>IMPORTANT NOTE: You must use build the fftMPI library and the test
+apps with the same precision setting.
+</P>
+<HR>
+
+<H4>Step 3 
+</H4>
+<P>Run the test programs from the test dir. 
+</P>
+<P>See the Run.sh file for examples of how to launch each of the apps in
+the various languages.  See the <A HREF = "runtest.html">runtest</A> doc page for a
+list of command-line arguments recognized by all the apps.
+</P>
+</HTML>

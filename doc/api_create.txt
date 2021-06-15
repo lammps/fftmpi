@@ -1,0 +1,77 @@
+"fftMPI documentation"_Manual.html
+
+API for FFT constructor and destructor :h3
+
+These fftMPI methods create and destroy an instance of the FFT3d or
+FFT2d class.  The code examples are for 3d FFTs.  Just replace "3d" by
+"2d" for 2d FFTs.
+
+Multiple instances can be instantiated by the calling program, e.g. if
+you need to define FFTs with different input or output layouts of data
+across processors or to run on different subsets of processors.  The
+MPI communicator argument for the constructor defines the set of
+processors which share the FFT data and perform the parallel FFT.
+
+:line
+
+API:
+
+FFT3d(MPI_Comm comm, int precision);     // constructor
+~FFT3d();                                // destructor :pre
+
+:line
+
+The comm argument in the constructor is an MPI communicator.  The
+precision argument is 1 for single-precision (two 32-bit floating
+point numbers = 1 complex datum), and 2 for double-precision (two
+64-bit floating point numbers = 1 complex datum).  The precision is
+checked by the fftMPI library to insure it was compiled with a
+matching precision.  See the "compile"_compile.html doc page for how
+to compile fftMPI for single versus double precision.
+
+:line
+:line
+
+C++:
+
+MPI_Comm world = MPI_COMM_WORLD;
+int precision = 2; :pre
+
+FFT3d *fft = new FFT3d(world,precision);
+delete fft; :pre
+
+:line
+
+C:
+
+MPI_Comm world = MPI_COMM_WORLD;
+int precision = 2;
+void *fft; :pre
+
+fft3d_create(world,precision,&fft);
+fft3d_destroy(fft); :pre
+
+:line
+
+Fortran:
+
+integer world,precision
+type(c_ptr) :: fft :pre
+
+world = MPI_COMM_WORLD
+precision = 2 :pre
+
+call fft3d_create(world,precision,fft)
+call fft3d_destroy(fft) :pre
+
+:line
+
+Python:
+
+from mpi4py import MPI :pre
+
+world = MPI.COMM_WORLD
+precision = 2 :pre
+
+fft = FFT3dMPI(world,precision)
+del fft :pre

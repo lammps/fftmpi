@@ -1,0 +1,259 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>Using the fftMPI library from your program 
+</H3>
+<P>The source code for applications (apps) in the test dir are examples
+of how to use fftMPI from C++, C, Fortran, and Python.  The apps that
+start with the word "simple" are about 150 lines each and are a
+complete illustration of how to setup a distributed grid and perform
+an FFT.  The apps that start with "test3d" or "test2d" are more
+complex; they take many optional command-line arguments that exercise
+all the options and methods that fftMPI provides.  An explantion of
+all the command-line options is on the <A HREF = "runtest.html">runtest</A> doc
+page.
+</P>
+<P>Details for all 4 languages are given here of what any application
+needs to include to perform 3d FFTs or 3d Remaps.  Just change "3" to
+"2" to perform 2d FFTs or 2d Remaps.  You can perform both 2d and 3d
+FFTs or Remaps from the same app, by including both the 2d and 3d
+header files and linking to both the 2d and 3d fftMPI library files.
+</P>
+<HR>
+
+<H4>Calling fftMPI from your source code 
+</H4>
+<P>Any file that makes a call to fftMPI needs to include a header file
+that defines the fftMPI API.  These code lines also show how to
+allocate grids for single or double precision FFTs or Remaps.  
+</P>
+<P>IMPORTANT NOTE: As explained on the <A HREF = "compile.html">compile</A> doc page,
+it is a compile-time choice to build fftMPI to perform either single
+or double precision FFTs.  Your application must allocate its FFT grid
+data to match the library precision setting.  You can look at the test
+apps to see how they do this in a flexible way so that the app can
+choose to perform its FFTs in either single or double precision.
+</P>
+<P>In these code examples, fftsize is the number of grid points owned by
+the processor for an FFT.  The "2" is for a pair of (real,imaginary)
+values stored for each grid point.  If a remap is being performed "2"
+could be a different value, as explained on the <A HREF = "api_remap.html">remap
+API</A> doc page.  The value of fftsize to use in an app
+is returned by the <A HREF = "api_setup.html">setup() method</A> and may include
+additional memory space for later stages of the FFT.
+</P>
+<P>C++: 
+</P>
+<PRE>#include "fft3d.h"      // if performing FFTs
+#include "remap3d.h"    // if performing Remaps
+using namespace FFTMPI_NS; 
+</PRE>
+<PRE>work = (float *) malloc(2*fftsize*sizeof(float));   // single precision
+work = (double *) malloc(2*fftsize*sizeof(double)); // double precision 
+</PRE>
+<P>The header files fft3d.h and remap3d.h define a typedef for FFT_SCALAR
+which is set to "float" or "double" depending on the precision you
+build fftMPI with.  So you can define work vectors to be of type
+FFT_SCALAR if you wish.
+</P>
+<P>C:
+</P>
+<PRE>#include "fft3d_wrap.h"     // if performing FFTs
+#include "remap3d_wrap.h"   // if performing Remaps 
+</PRE>
+<PRE>work = (float *) malloc(2*fftsize*sizeof(float));   // single precision
+work = (double *) malloc(2*fftsize*sizeof(double)); // double precision 
+</PRE>
+<P>As with C++, you can define work vectors to be of type FFT_SCALAR.
+</P>
+<P>Fortran:
+</P>
+<PRE>use iso_c_binding   ! use these lines in any subroutine/function that calls fftMPI
+use fft3d_wrap      ! if performing FFTs
+use remap3d_wrap      ! if performing Remaps 
+</PRE>
+<PRE>real(4), allocatable, target :: work(:)   ! single precision 
+real(8), allocatable, target :: work(:)   ! double precision
+allocate(work(2*fftsize)) 
+</PRE>
+<P>Python:
+</P>
+<PRE>import numpy as np
+from mpi4py import MPI
+from fftmpi import FFT3dMPI     # if performing FFTs
+from fftmpi import Remap3dMPI   # if performing Remaps 
+</PRE>
+<PRE>work = np.zeros(2*fftsize,np.float32)    # single precision
+work = np.zeros(2*fftsize,np.float)      # double precision 
+</PRE>
+<P>To use fftMPI from Python, you must have Numpy and mpi4py installed
+in your Python.  This is discussed further below.
+</P>
+<HR>
+
+<H4>Building your app with fftMPI 
+</H4>
+<P>These header files listed above for each language are all in the
+fftMPI src directory.  When you compile your app, it must be able to
+find the appropriate header file.  The library files libfft3dmpi.so
+and libfft2dmpi.so (or *.a equilvalents) are also in the fftMPI src
+directory, after <A HREF = "compile.html">building the library</A>:
+</P>
+<UL><LI>C++: fft3d.h, remap3d.h
+<LI>C: fft3d_wrap.h, remap3d_wrap.h
+<LI>Fortran: fft3d_wrap.f90, remap3d_wrap.f90
+<LI>Python: fftmpi.py (contains both a FFT3dMPI and Remap3dMPI class) 
+</UL>
+<P>For C++ and C, the compile and link commands can be something like this:
+</P>
+<PRE>mpicxx -I/home/me/fftmpi/src -c test3d.cpp
+mpicxx -L/home/me/fftmpi/src test3d.o -lfft3dmpi -o test3d 
+</PRE>
+<P>where the -I and -L switches give the path to the fftMPI src dir.
+</P>
+<P>For Fortran, the fft3d_wrap.f90 and/or remap3d_wrap.f90 files need to
+be in the directory with your app files.  So you can copy it there;
+the fft*wrap.f90 files are already present in the test dir.  The
+compile and link commands can then be something like this:
+</P>
+<PRE>mpif90 -I/home/me/fftmpi/src -c fft3d_wrap.f90
+mpif90 -I/home/me/fftmpi/src -c test3d_f90.f90
+mpif90 -L/home/me/fftmpi/src test3d_f90.o fft3d_wrap.o -lfft3dmpi -lstdc++ -o test3d_f90 
+</PRE>
+<P>where the -I and -L switches give the path to the fftMPI src dir.
+</P>
+<P>For Python, there is no build step.  However your Python script needs
+to be able to find the src/fftmpi.py and library files at run time;
+see the next section.
+</P>
+<P>Note that if you built fftMPI as a static library, using an external
+1d FFT library (FFTW or Intel MKL) then the link lines above also need
+to include the 1d FFT library.  If you built fftMPI as a shared
+library this is not needed; the dependencies on the 1d FFT libraries
+were satistified when the fftMPI library was built.  See the
+<A HREF = "buildtest.html">buildtest</A> doc page for details on how to include
+these 1d FFT libraries in the link.  To use the provided KISS FFT
+library (just a header file), no additional link arguments are needed.
+</P>
+<HR>
+
+<H4>Running your app with Python 
+</H4>
+<P>To use fftMPI from Python, there are 3 things to consider.  If any of
+them are not satisfied you will get a run-time error when you launch
+your Python script.  Each topic is discussed in more detail below:
+</P>
+<UL><LI>Numpy and mpi4py installed in your Python
+<LI>app finds the src/fftmpi.py file
+<LI>app finds the fftMPI library file 
+</UL>
+<HR>
+
+<P>(1) Numpy and mpi4py must be installed in your Python
+</P>
+<P>The allocation of the FFT grid in your app must be via
+Numpy vectors or arrays, which are then passed to fftMPI.
+Numpy is a numeric package already installed in most Pythons.
+</P>
+<P>The mpi4py package is a wrapper on MPI and allows you to
+run Python scripts in parallel.
+</P>
+<P>You can test for both of these packages as follows:
+</P>
+<PRE>% python
+>>> import numpy as np
+>>> from mpi4py import MPI 
+</PRE>
+<P>If an error results with either import command you will have
+to install the corresponding package.
+</P>
+<P>For Numpy, go to <A HREF = "http://www.numpy.org">http://www.numpy.org</A> and
+follow the directions to download/install Numpy.
+</P>
+<P>For mpi4py, go to <A HREF = "http://www.mpi4py.org">http://www.mpi4py.org</A>,
+unpack it, and install it via pip:
+</P>
+<PRE>pip install mpi4py 
+</PRE>
+<P>Or if you are using <A HREF = "http://www.anaconda.org">anaconda</A> for your Python
+package management, you can type the following to download and install
+either package
+</P>
+<PRE>conda install numpy
+conda install mpi4py 
+</PRE>
+<P>After mpi4py imports sucessfully, try running the following test.py
+script on a few processors, like this mpirun -np 4 python test.py
+</P>
+<PRE># test.py script
+from mpi4py import MPI
+world = MPI.COMM_WORLD
+me = world.rank
+nprocs = world.size
+print "Me %d Nprocs %d" % (me,nprocs) 
+</PRE>
+<P>You should get 4 lines of output "Me N Nprocs 4", where N = 0,1,2,3.
+</P>
+<P>IMPORTANT NOTE: When mpi4py is installed in your Python, it compiles
+an MPI library (e.g. inside conda) or uses a pre-existing MPI library
+it finds on your system.  This MUST be the same MPI library that
+fftMPI and your app are built with.  If they do not match, you will
+typically get run-time MPI errors when your app runs.
+</P>
+<P>You can inspect the path to the MPI library that mpi4py uses like this:
+</P>
+<PRE>% python
+>>> import mpi4py
+>>> mpi4py.get_config() 
+</PRE>
+<HR>
+
+<P>(2) Your app must be able to find the src/fftmpi.py file
+</P>
+<P>The src/fftmpi.py file is a Python wrapper on the fftMPI C interface.
+Python loads it when a statement like this is executed:
+</P>
+<PRE>from fftmpi import FFT3dMPI 
+</PRE>
+<P>If this fails because it cannot find fftmpi.py, you
+can do one of two things:
+</P>
+<P>(a) Set the PYTHONPATH environment variable to include the fftMPI src
+dir, like this, either from the command line or in your shell start-up
+script:
+</P>
+<PRE>setenv PYTHONPATH $<I>PYTHONPATH</I>:/home/sjplimp/fftmpi/src   # csh or tcsh
+export PYTHONPATH=$<I>PYTHONPATH</I>:/home/sjplimp/fftmpi/src   # bash 
+</PRE>
+<P>(b) From your Python app, you can augment the search path directly:
+</P>
+<PRE>path_fftmpi = "/home/me/fftmpi/src"
+sys.path.append(path_fftmpi)
+from fftmpi import FFT3dMPI 
+</PRE>
+<HR>
+
+<P>(3) Your app must be able to find the fftMPI library file
+</P>
+<P>Python loads the fftMPI library when a statement like this is
+executed.  It looks for the fft3dmpi.so file.  Note
+that you must build fftMPI as a shared library to use it
+from Python.  
+</P>
+<PRE>fft = FFT3dMPI(world,precision) 
+</PRE>
+<P>If this fails because if cannot find the library file (similar
+for 2d FFTs, or 3d/2d Remaps), you can do one of two things:
+</P>
+<P>(a) You can add the fftMPI src dir to your LD_LIBRARY_PATH environment
+variable, e.g.
+</P>
+<PRE>setenv LD_LIBRARY_PATH $<I>LD_LIBRARY_PATH</I>:/home/me/fftmpi/src   # csh or tcsh
+export LD_LIBRARY_PATH=$<I>LD_LIBRARY_PATH</I>:/home/me/fftmpi/src   # bash 
+</PRE>
+<P>(b) You can "install" the fftMPI library file in a location your where
+your system can find it, such as /usr/local/lib.  See the
+<A HREF = "compile.html">compile</A> doc page for details on installing fftMPI after
+you build it.  This typically requires super-user or sudo priveleges.
+</P>
+</HTML>

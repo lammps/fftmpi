@@ -1,0 +1,60 @@
+"fftMPI documentation"_Manual.html
+
+Introduction :h3
+
+The fftMPI library computes multi-dimensional FFTs in parallel where
+the FFT grid is distributed across processors.  Features and
+limitations of the library are as follows:
+
+2d or 3d FFTs
+complex-to-complex FFTs
+single or double precision
+compute FFTs in place, or output to separate memory
+runs on any number of processors, including 1 proc
+allowed grid size in each dimension = any product of 2,3,5 prime factors
+grid decomposition = arbitrary tiling across MPI tasks (explained below)
+initial/final decompositions of grid can be different (useful for convolutions)
+auto-tuning option for a few parameters which affect performance
+1d FFTs computed by an external library: "FFTW"_fftw, "MKL"_mkl, or "KISS"_kiss
+data movement/reordering methods can be used without FFTs
+invoke multiple instances of the library (e.g. with MPI sub-communicators)
+callable from C++ or any language via a C interface (e.g. C, Fortran, Python)
+test programs and interface files included for all 4 of these languages
+CPU only execution, currently no OpenMP or GPU support :ul
+
+In the fftMPI context, a "tiling" of the 2d or 3d FFT grid is how it
+is distributed across processors.  Imagine a N1 x N2 or N1 x N2 x N3
+grid partitioned into P tiles, where P is the number of MPI tasks
+(processors).  Each tile is a "rectangle" of grid points in 2d or
+"brick" of grid points in 3d.  Each processor's tile can be any size
+or shape, including empty.  The P individual tiles cannot overlap;
+their union is the entire grid.  This means each point of the global
+FFT grid is owned by a unique processor.
+
+A 2d FFT is performed as a set of N2 1d FFTs in the first dimension,
+followed by N1 1d FFTs in the 2nd dimension.  A 3d FFT is performed as
+N2*N3 1d FFTs in the first dimension, then N1*N3 1d FFTs in the 2nd,
+then N1*N2 1d FFTs in the third dimension.
+
+The FFT result can overwrite the input values (in-place FFT) or be
+written to new memory.  However note that fftMPI also allocates additional
+memory internally to buffer MPI send and recv messages.
+
+The 1d FFTs are not computed by fftMPI itself, but rather by calls
+each processor makes to an external library.  As listed above, fftMPI
+has support for these libraries:
+
+"FFTW (version 3 or 2)"_fftw
+"Intel MKL"_mkl
+"KISS FFT"_kiss (provided with fftMPI) :ul
+
+:link(fftw,http://www.fftw.org)
+:link(fftwmpi,http://www.fftw.org/fftw3_doc/Distributed_002dmemory-FFTW-with-MPI.html#Distributed_002dmemory-FFTW-with-MPI)
+:link(kiss,https://sourceforge.net/projects/kissfft)
+
+What fftMPI encodes is the parallel communication necessary to remap
+grid data between processors.  This involves both sending/receiving
+data between processors and re-ordering data on-processor, between
+each stage of 1d FFT computations.  This distributes the sets of 1d
+FFT computations across processors, and stores the data for individual
+1d FFTs contiguously on each processor.

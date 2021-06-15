@@ -1,0 +1,107 @@
+"fftMPI documentation"_Manual.html
+
+Compiling the library :h3
+
+From the src directory, simply type 
+
+% make :pre
+
+This should build fftMPI, so long as you have MPI installed and
+available in your path.  The standard Makefile uses mpicxx for
+compiling, using whatever C++ compiler it wraps.  By default, two
+shared library files are created, for 2d and 3d FFTs: libfft2dmpi.so
+and libfft3dmpi.so.
+
+There are also a few provided Makefile.machine files that work on
+different supercomputers.  You can use one of them or create your own
+edited file and invoke it as
+
+% make -f Makefile.machine :pre
+
+You should only need to edit the "compiler/linker settings" section at
+the top of any Makefile.machine.
+
+:line
+
+By default, fftMPI is built to use the provided KISS FFT library for
+1d FFTs.  It also computes double-precision FFTs (one complex datum =
+2 64-bit floating point values).  And if using an Intel compiler it
+uses the TBB (thread building blocks) memory allocator.
+
+Three make variables will change those default settings.  You can add
+one or more of them to any make command:
+
+p=single     # single-precision FFTs (double is default)
+fft=fftw     # options: fftw3 (same as fftw), fftw2, mkl, kiss (default)
+tbb=no       # do not use TBB with Intel compiler (yes is default) :ul
+
+Here are example make commands using these variables:
+
+% make help             # see syntax for all options
+% make p=single         # single precision
+% make fft=fftw         # use the FFTW3 lib for 1d FFTs
+% make lib              # build only 2 static libs (2d and 3d)
+% make shlib fft=mkl    # build only 2 shared libs
+% make all tbb=no       # build both static and shared libs
+
+The static library build will create libfft2dmpi.a and libfft3dmpi.a.
+
+MPORTANT NOTE: You must use a value for the "p" variable that matches
+how your application will allocate data for its FFT grid(s).  This
+insures the single- or double-precision data types used in both
+the application and within fftMPI match.
+
+You only need to set the tbb variable to no if you get a compile-time
+error about being able to find the Intel TBB (thread building block)
+header file.
+
+When building with a 1d FFT package other than KISS, the Makefile
+assumes the source directory for the package is in your path, so that
+it can find the appropriate include file.  These files are fftw.h or
+sfftw.h for double/single precision for FFTW2, fftw3.h for FFTW3, and
+mkl_dfti.h for MKL.  The KISS library kissfft.h file is included in
+the src dir.  If the appropriate include file is not found, you will
+need to add a setting for its directory to FFT_INC in the Makefile,
+something like -I/home/me/pathforFFTW3/include.
+
+When building fftMPI as shared libraries, the Makefile will include
+the library files for the 1d FFT package you have chosen in the link
+command.
+
+These libraries are as follows:
+
+FFTW2: libfftw.so
+FFTW3 double precision: libfftw3.so
+FFTW3 single precision: libfftw3f.so
+MKL built with Intel compiler: libmkl_intel_lp64.so, libmkl_sequential.so, libmkl_core.so
+MKL built with GNU compiler: libmkl_gf_lp64.so, libmkl_sequential.so, libmkl_core.so
+KISS: no library file :ul
+
+If the build cannot find these library files in the directories
+specified by your LD_LIBRARY_PATH environment variable an error will
+result.
+
+If the appropriate library file is not found, you will need to add a
+setting for the its directory to FFT_PATH in the Makefile, something
+like -L/home/me/pathforMKL/lib.
+
+Note that this is not an issue when building fftMPI as static
+libraries.  In that case you will need to insure the build of your
+application can find the correct 1d FFT library files; see the
+"buildtest"_buildtest.html doc page for details.
+
+:line
+
+You may wish to install both the fftMPI header files and library files
+in a location where the build procedure for other applications can
+find them, e.g. under /usr/local.  This can be particulary useful for
+*.so shared library files, since your LD_LIBRARY_PATH environment
+variable is often already set to look in this location.  These
+commands copy the 3d files; just change 3d to 2d for the 2d files.
+
+% cd fftmpi/src
+% cp fft3d.h fft3d_wrap.h remap3d_wrap.h /usr/local/include  # include files
+% cp libfft3dmpi.so /usr/local/lib                           # library files :pre
+
+Note that you typically need super-user or sudo priveleges to copy
+files into /usr/local or other system dirs.

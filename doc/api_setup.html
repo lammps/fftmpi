@@ -1,0 +1,406 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>API for FFT setup() and setup_memory() 
+</H3>
+<P>These fftMPI methods are invoked once to setup an FFT.  They define
+the global grid size, the input/output layouts of data across
+processors, and various parameters which can affect how the FFT is
+computed.  The code examples at the bottom of the page are for 3d
+FFTs.  Just replace "3d" by "2d" for 2d FFTs.  Note that the setup()
+method has a 3d and 2d version.
+</P>
+<P>An alternative to the setup() method is the tune() method described on
+the <A HREF = "api_tune.html">tune API</A> doc page.  One or the other method must
+be invoked before computing actual FFTs, but not both.
+</P>
+<HR>
+
+<P>API:
+</P>
+<PRE>int collective = 0/1/2 = point/all/combo (default = 2)    // 6 variables
+int exchange = 0/1 = pencil/brick (default = 0)
+int packflag = array/ptr/memcpy = 0/1/2 (default = 2)
+int memoryflag = 0/1 (default = 1)
+int scaled = 0/1 (default = 1)
+int remaponly = 0/1 (default = 0) 
+</PRE>
+<PRE>void setup(int nfast, int nmid, int nslow,                 // 3d version
+           int in_ilo, int in_ihi, int in_jlo, 
+           int in_jhi, int in_klo, int in_khi,
+           int out_ilo, int out_ihi, int out_jlo, 
+           int out_jhi, int out_klo, int out_khi,
+           int permute,
+           int &fftsize, int &sendsize, int &recvsize) 
+</PRE>
+<PRE>void setup(int nfast, int nslow,                           // 2d version
+           int in_ilo, int in_ihi, int in_jlo, int in_jhi,
+           int out_ilo, int out_ihi, int out_jlo, int out_jhi,
+           int permute,
+           int &fftsize, int &sendsize, int &recvsize) 
+</PRE>
+<PRE>void setup_memory(FFT_SCALAR *sendbuf, FFT_SCALAR *recvbuf) 
+</PRE>
+<HR>
+
+<P>The first 6 lines in the API section above are names of public
+variables within the FFT class which can be set to enable options.
+All of them have reasonable default settings.  So you typically don't
+need to reset them.
+</P>
+<P>If reset, the first 4 variables must be set before the setup() call.
+Once setup() is invoked, changing them has no effect.
+</P>
+<P>The last 2 variables can be set (or changed) anytime before the
+<A HREF = "api_compute.html">compute()</A> method is called to perform an FFT.
+</P>
+<P>To set these variables from C, Fortran, Python, there is a set()
+method which needs to be called.  See syntax details in the code
+examples below.
+</P>
+<HR>
+
+<P>The "collective" variable = 0/1/2 corresponds to 3 algorithmic choices
+for performing collective communication when FFT grid data moves to
+new processors between stages of 1d FFTs.
+</P>
+<P>The "point" setting (0) invokes point-to-point MPI_Send() and
+MPI_Receive() methods between pairs of processors to send/receive
+data.
+</P>
+<P>The "all" setting (1) invokes the MPI_All2all() method within subsets
+of processors that need to exchange data.
+</P>
+<P>The "combo" setting (2) is a combination of the other options.  It
+invokes point-to-point MPI methods for pencil-to-brick data movement,
+and the all2all MPI method for pencil-to-pencil data movement.
+</P>
+<HR>
+
+<P>The "exchange" variable = 0/1 corresponds to 2 algorithmic choices for
+how many times FFT grid data moves to new processors between stages of
+1d FFTs.
+</P>
+<P>The "pencil" setting (0) moves data once between each pair of 1d FFT
+stages.  For example, assume the fast dimension corresponds to x, and
+the slow dimension to y.  Then to move data bewteen an x-pencil layout
+to a y-pencil layout, one data remap is performed.
+</P>
+<P>The "brick" setting (1) moves data twice between each pair of 1d FFT
+stages.  For example, to move data bewteen an x-pencil layout to a
+y-pencil layout, one data remap is performed to go from an x-pencil
+layout to a 3d brick (or 2d rectangle) layout, and a second data remap
+to go from brick (rectangle) layout to a y-pencil layout.
+</P>
+<HR>
+
+<P>The "packflag" variable = 0/1/2 corresponds to 3 algorithmic choices
+for packing/unpacking FFT grid data into MPI communication buffers.
+</P>
+<P>The "array" setting (0) accesses the local FFT grid data as a 3d (or
+2d) array.
+</P>
+<P>The "ptr" setting (1) accesses the local FFT grid data as a 1d vector
+using pointers.
+</P>
+<P>The "memcpy" setting (2) is similar to the "ptr" setting, except data
+is copied via a memcpy() function rather than be looping over it one
+datum at a time.
+</P>
+<HR>
+
+<P>If the "memoryflag" variable is 1, then fftMPI will allocate memory
+internally to use for sending/receiving messages.  If "memoryflag" is
+set to 0, then the caller must allocate the memory and pass pointers
+to the library via a setup_memory() call before the
+<A HREF = "api_compute.html">compute()</A> method is invoked.  The required length
+of these buffers is returned by the setup() method as sendsize and
+recvsize.
+</P>
+<HR>
+
+<P>If the "scaled" variable is 1, then a forward FFT followed by an
+backward FFT will return values equal to the initial FFT grid values.
+If the "scaled" variable is 0, then the same operation would produce
+final values that are a factor of N larger than the initial values,
+where N = total # of points in the FFT grid (3d or 2d).
+</P>
+<HR>
+
+<P>The setup() method can only be called once.  Only the 3d case is
+illustrated below for each language; the 2d analogs should be clear.
+</P>
+<P>The nfast, nmid, nslow arguments are the size of the global 3d FFT
+grid (nfast, nslow for 2d).  As explained on the <A HREF = "layout.html">layout</A>
+doc page, they do NOT refer to dimensions x or y or z in a spatial
+sense.  Rather they refer to the ordering of grid points in the
+caller's memory for the 3d "brick" of grid points that each processor
+owns.  The points in the nfast dimension are consecutive in memory,
+points in the nmid dimension are separated by stride nfast in memory,
+and points in the nslow dimension are separated by stride nfast*nmid.
+</P>
+<P>The "in/out ijk lo/hi" indices define the tile of the 3d or 2d global
+grid that each processor owns before and after a forward or backward
+FFT is computed.  See the <A HREF = "compute.html">compute</A> doc page for details
+Again, i/j/k correspond to fast/mid/slow, NOT to x/y/z.
+</P>
+<P>As explained on the <A HREF = "layout.html">layout</A> doc page, a tile is a brick
+in 3d or rectangle in 2d.  Each index can range from 0 to N-1
+inclusive, where N is the corresponding global grid dimension.  The
+lo/hi indices are the first and last point (in that dimension) that
+the processor owns.  If a processor owns no grid point (e.g. on
+input), then its lo index (in one or more dimensions) should be one
+larger than its hi index.
+</P>
+<P>IMPORTANT NOTE: When calling fftMPI from Fortran, the index ranges are
+from 1 to N inclusive, not 0 to N-1.
+</P>
+<P>Here are three examples for 2d FFT grids:
+</P>
+<PRE>in_ilo = 10, in_ihi = 20
+in_jlo = 100, in_jhi = 110 
+</PRE>
+<PRE>in_ilo = 10, in_ihi = 10
+in_jlo = 100, in_jhi = 109 
+</PRE>
+<PRE>in_ilo = 10, in_ihi = 9
+in_jlo = 100, in_jhi = 110 
+</PRE>
+<P>The first means the processor owns an 11x11 rectangle of grid points.
+The second means the processor owns a 1x10 rectangle of grid points.
+The third means the processor owns no grid points.
+</P>
+<P>IMPORTANT NOTE: It is up to the calling app to insure that a valid
+tiling of the global grid across all processors is passed to fftMPI.
+As explained on the <A HREF = "layout.html">layout</A> doc page, "valid" means that
+every grid point is owned by a unique processor and the union of all
+the tiles is the global grid.
+</P>
+<HR>
+
+<P>The permute argument to setup() triggers a permutation in storage
+order of fast/mid/slow for the FFT output.  A value of 0 means no
+permutation.  A value of 1 means permute once = mid->fast, slow->mid,
+fast->slow.  A value of 2 means permute twice = slow->fast, fast->mid,
+mid->slow.  For 2d FFTs, the only allowed permute values are 0,1.  As
+explained on the <A HREF = "layout">layout</A> doc page, this can be useful when
+performing convolution operations, to avoid extra communication after
+the FFT is performed.
+</P>
+<P>Note that the permute setting does not change the meaning of the "out
+ijk lo/hi" indices relative to the nfast,nmid,nslow grid dimensions.
+It just changes the ordering of the grid point data within a
+processors output tile.  For example, say a processor's output tile is
+20x60x32, located anywhere in the global Nfast x Nmid x Nslow grid.
+</P>
+<P>As explained on the <A HREF = "layout.html">layout</A> doc page, if permute = 0,
+then on input and output the Nfast dimension varies fastest, i.e. for
+a fixed pair of Nmid,Nslow indices, the 20 grid points with Nfast
+indices 1 to 20 are consecutive in memory.  The Nmid dimension varies
+next fastest.  And the Nslow dimension varies slowest, i.e. for a
+fixed pair of Nfast,Nmid indices, the 32 grid points with Nslow
+indices 1 to 32 are spaced in memory with stride = 1200 = 20*60.
+</P>
+<P>If permute = 1, then on output only (input ordering is not changed),
+the Nmid dimension now varies fastest, i.e. for a fixed pair of
+Nfast,Nslow indices, the 60 grid points with Nmid indices 1 to 60 are
+consecutive in memory.  The Nslow dimension now varies next fastest.
+And the Nfast dimension now varies slowest, i.e. for a fixed pair of
+Nmid,Nslow indices, the 20 grid points with Nfast indices 1 to 20 are
+spaced in memory with stride = 1920 = 60*32.
+</P>
+<P>Similarly if permute = 1, then on output only, the Nslow dimension now
+varies fastest, i.e. for a fixed pair of Nfast,Nmid indices, the 32
+grid points with Nslow indices 1 to 32 are consecutive in memory.  The
+Nfast dimension now varies next fastest.  And the Nmid dimension now
+varies slowest, i.e. for a fixed pair of Nfast,Nslow indices, the 60
+grid points with Nmid indices 1 to 60 are spaced in memory with stride
+= 640 = 20*32.
+</P>
+<HR>
+
+<P>Three values are retured by setup().  Fftsize is the max number of FFT
+grid points the processor will own at any stage of the FFT (start,
+intermediate, end).  Note that it is possible for the output size to
+be larger than the input size, and an intermediate size can be larger
+than both the input or output sizes.
+</P>
+<P>Thus fftsize is the size of the FFT array the caller should allocate
+to store its FFT grid points.  Note that fftsize is the # of complex
+datums the processor owns.  Thus the caller allocation should be
+2*fftsize doubles for double-precision FFTs, and 2*fftsize floats for
+single-precision FFTs.  As explained on the <A HREF = "compute.html">compute</A> doc
+page, the caller can either perform an FFT in-place (one FFT grid) or
+allocate separate input and output grids.  In the latter case, the
+output grid should be of size fftsize.  The input grid can be exactly
+the size of the input data (i.e. possibly smaller than fftsize).
+</P>
+<P>The returned sendsize and recvsize are the length of buffers needed to
+perform the MPI sends and receives for the data remapping operations
+for a 2d or 3d FFT.  If the memoryflag variable is set to 1 (the
+default, see description above), fftMPI will allocate these buffers.
+The caller can ignore sendsize and recvsize.  If the memoryflag
+variable is set to 0, the caller must allocate the two buffers of
+these lenghts and pass them to fftMPI via the setup_memory() method,
+as explained next.
+</P>
+<HR>
+
+<P>The setup_memory() method can only be called if the "memorysize"
+variable is set to 1, in which case it must be called.  The caller
+allocates two buffers (sendbuf and recvbuf) with lengths sendsize and
+recvsize respectively, and passes them to fftMPI.  Sendsize and
+recvsize are values returned by the setup() method.
+</P>
+<P>The FFT_SCALAR datatype in the setup_memory() API above, is defined by
+fftMPI to be "double" (64-bit) or "float" (32-bit) for
+double-precision or single-precision FFTs.
+</P>
+<P>Note that unlike fftsize, sendsize and recvsize are NOT a count of
+complex values, but are the number of doubles or floats the two
+buffers must be able to hold, for double- or single-precision FFTs
+respectively.
+</P>
+<HR>
+
+<HR>
+
+<P>C++:
+</P>
+<PRE>int cflag,eflag,pflag,mflag,sflag,rflag; 
+</PRE>
+<PRE>fft->collective = cflag;
+fft->exchange = eflag;
+fft->packflag = pflag;
+fft->memoryflag = mflag; 
+</PRE>
+<PRE>fft->scaled = sflag;
+fft->remaponly = rflag; 
+</PRE>
+<PRE>int nfast,nmid,nslow;
+int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi;
+int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+int permute,fftsize,sendsize,recvsize; 
+</PRE>
+<PRE>fft->setup(nfast,nmid,nslow,
+           in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+           out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+           permute,fftsize,sendsize,recvsize); 
+</PRE>
+<PRE>FFT_SCALAR *sendbuf = (FFT_SCALAR *) malloc(sendsize*sizeof(FFT_SCALAR));
+FFT_SCALAR *recvbuf = (FFT_SCALAR *) malloc(recvsize*sizeof(FFT_SCALAR));
+fft->setup_memory(sendbuf,recvbuf); 
+</PRE>
+<P>The "fft" pointer is created by instantiating an instance of the
+<A HREF = "api_create.html">FFT3d class</A>.
+</P>
+<P>The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+</P>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<HR>
+
+<P>C:
+</P>
+<PRE>void *fft;     // set by <A HREF = "api_create.html">fft3d_create()</A>
+int cflag,eflag,pflag,mflag,sflag,rflag; 
+</PRE>
+<PRE>fft3d_set(fft,"collective",cflag);
+fft3d_set(fft,"exchange",eflag);
+fft3d_set(fft,"pack",pflag);
+fft3d_set(fft,"memory",mflag); 
+</PRE>
+<PRE>fft3d_set(fft,"scale",sflag);
+fft3d_set(fft,"remaponly",rflag); 
+</PRE>
+<PRE>int nfast,nmid,nslow;
+int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi;
+int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+int permute,fftsize,sendsize,recvsize; 
+</PRE>
+<PRE>fft3d_setup(fft,nfast,nmid,nslow,
+            in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+            out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+            permute,&fftsize,&sendsize,&recvsize); 
+</PRE>
+<PRE>FFT_SCALAR *sendbuf = (FFT_SCALAR *) malloc(sendsize*sizeof(FFT_SCALAR));
+FFT_SCALAR *recvbuf = (FFT_SCALAR *) malloc(recvsize*sizeof(FFT_SCALAR));
+fft3d_setup_memory(sendbuf,recvbuf); 
+</PRE>
+<P>The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+</P>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<HR>
+
+<P>Fortran:
+</P>
+<PRE>type(c_ptr) :: fft    ! set by <A HREF = "api_create.html">fft3d_create()</A>
+integer cflag,eflag,pflag,mflag,sflag,rflag 
+</PRE>
+<PRE>call fft3d_set(fft,"collective",cflag)
+call fft3d_set(fft,"exchange",eflag)
+call fft3d_set(fft,"pack",pflag)
+call fft3d_set(fft,"memory",mflag) 
+</PRE>
+<PRE>call fft3d_set(fft,"scale",sflag)
+call fft3d_set(fft,"remaponly",rflag) 
+</PRE>
+<PRE>integer nfast,nmid,nslow
+integer in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi
+integer out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi
+integer permute,fftsize,sendsize,recvsize 
+</PRE>
+<PRE>call fft3d_setup(fft,nfast,nmid,nslow, &
+                 in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
+                 out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
+                 permute,fftsize,sendsize,recvsize) 
+</PRE>
+<PRE>real(4), allocatable, target :: sendbuf(:),recvbuf(:)    ! single precision
+real(8), allocatable, target :: sendbuf(:),recvbuf(:)    ! double precision
+allocate(sendbuf(sendsize))
+allocate(sendbuf(recvsize))
+fft3d_setup_memory(fft,c_loc(sendbuf),c_loc(recvbuf)) 
+</PRE>
+<P>For Fortran, the "in i/j/k lo/hi" indices then range from 1 to N
+inclusive, where N is nfast, nmid, or nslow.  Unlike the other
+languages discussed on this page where the indices range from 0 to N-1
+inclusive.
+</P>
+<HR>
+
+<P>Python:
+</P>
+<PRE>cflag = 1
+pflag = 0
+... 
+</PRE>
+<PRE>fft.set("collective",cflag)
+fft.set("exchange",eflag)
+fft.set("pack",pflag)
+fft.set("memory",mflag) 
+</PRE>
+<PRE>fft.set("scale",sflag)
+fft.set("remaponly",rflag) 
+</PRE>
+<PRE>fftsize,sendsize,recvsize =    fft.setup(nfast,nmid,nslow,in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+             out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,permute) 
+</PRE>
+<PRE>import numpy as np
+sendbuf = np.zeros(sendsize,np.float32)   # single precision
+recvbuf = np.zeros(recvsize,np.float32)
+sendbuf = np.zeros(sendsize,np.float)     # double precision
+recvbuf = np.zeros(sendsize,np.float)
+fft.setup_memory(sendbuf,recvbuf) 
+</PRE>
+<P>The "fft" object is created by instantiating an instance
+of the <A HREF = "api_create.html">FFT3dMPI class</A>.
+</P>
+<P>The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+</P>
+</HTML>

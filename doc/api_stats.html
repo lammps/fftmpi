@@ -1,0 +1,308 @@
+<HTML>
+<P><A HREF = "Manual.html">fftMPI documentation</A>
+</P>
+<H3>API for FFT only_1d_ffts(), only_remaps(), only_one_remap() 
+</H3>
+<P>These methods and variables are generally only useful to call or
+access when doing performance testing or debugging.  The methods
+perform lower-level operations that are part of FFTs.  The variables
+store info about how an FFT is computed or timing breakdowns for trial
+runs performed by the <A HREF = "api_tune.html">tune() method</A>.  See the
+test/test3d.cpp and its timing() method for examples of how they can
+be accessed and output.
+</P>
+<P>The code examples at the bottom of the page are for 3d FFTs.  Just
+replace "3d" by "2d" for 2d FFTs.  Note that a few of the variables
+listed in the API section do not exist for 2d FFTs.
+</P>
+<HR>
+
+<P>API:
+</P>
+<PRE>void only_1d_ffts(FFT_SCALAR *in, int flag);
+void only_remaps(FFT_SCALAR *in, FFT_SCALAR *out, int flag);
+void only_one_remap(FFT_SCALAR *in, FFT_SCALAR *out, int flag, int which); 
+</PRE>
+<PRE>int collective,exchange,packflag; // 3 values caller can set
+int64_t memusage;                 // memory usage in bytes 
+</PRE>
+<PRE>int npfast1,npfast2,npfast3;      // size of pencil decomp in fast dim
+int npmid1,npmid2,npmid3;         // ditto for mid dim
+int npslow1,npslow2,npslow3;      // ditto for slow dim
+int npbrick1,npbrick2,npbrick3;   // size of brick decomp in 3 dims 
+</PRE>
+<PRE>int ntrial;                            // # of tuning trial runs
+int npertrial;                         // # of FFTs per trial
+int cbest,ebest,pbest;                 // fastest setting for coll,exch,pack
+int cflags[10],eflags[10],pflags[10];  // same 3 settings for each trial
+double besttime;                       // fastest single 3d FFT time
+double setuptime;                      // setup() time after tuning
+double tfft[10];                     // single 3d FFT time for each trial
+double t1d[10];                      // 1d FFT time for each trial
+double tremap[10];                   // total remap time for each trial
+double tremap1[10],tremap2[10],tremap3[10],tremap4[10];  // per-remap time for each trial 
+</PRE>
+<PRE>char *fft1d;                // name of 1d FFT lib
+char *precision;            // precision of FFTs, "single" or "double" 
+</PRE>
+<HR>
+
+<P>The 3 "only" methods perform only portions of an FFT, so that they can
+be timed seperately by the calling app.  The "in" and "out" pointers
+have the same meaning as for the <A HREF = "api_compute.html">compute() method</A>.
+The data they point to should be initialized to zero by the caller.
+</P>
+<P>For only_1d_ffts(), 3 sets of 1d ffts (fast, mid, slow) are performed
+if the 3d case, and 2 sets for 2d (just fast, slow).  No data
+remapping is performed.  Only an "in" buffer is passed to this method,
+since the 1d FFTs are always done in place.  Since a processor may own
+more data at intermediate stages of the FFT than it does initially,
+the data buffer should be of size "fftsize" and all be initialized to
+zero.  Fftsize is the buffer length returned by the <A HREF = "api_setup.html">setup()
+method</A> or <A HREF = "tune.html">tune() method</A>.
+</P>
+<P>For only_remaps(), all the data remappings for the FFT are performed,
+but no 1d FFTs.  The flag value is 1 for a forward FFT and -1 for an
+backward FFT, the same as the flag value for the <A HREF = "api_compute.html">compute()
+method</A>.
+</P>
+<P>For only_one_remap(), a single data remappings within the FFT is
+performed (no 1d FFTs).  The flag value is 1 for a forward FFT and -1
+for an backward FFT.  The "which" argument is one of 1,2,3,4 for a 3d
+FFT, and one of 1,2,3 for a 2d FFT.  For a forward 3d FFT, 1 = initial
+remap from input layout to x-pencils, 2 = remap from x to y-pencils, 3
+= remap from y to z-pencils, 4 = remap from z-pencils to output
+layout.  For an backward 3d FFT each of the which = 1,2,3,4 is the
+same, except the remap is in the other direction.  E.g. which = 3 is a
+remap from z to y-pencils.  A 2d FFT is the same except there is no y
+to z-pencils remap for a forward FFT.
+</P>
+<HR>
+
+<P>The variable lines in the API section above are names of public
+variables within the FFT class which can be accessed by the caller.
+Their data types are one of the following: int (32-bit integer),
+int64_t (64-bit integer), double (64-bit floating point), char *
+(string), int *, double *.  The latter two are vectors of values.
+</P>
+<P>The collective,exchange,packflag values are set by the caller (or
+defaults) when using the <A HREF = "api_setup.html">setup() method</A> They are set
+by fftMPI when using the <A HREF = "api_tune.html">tune() method</A>.  Memusage is
+the size (on each processor) of the internal memory allocated by
+fftMPI for send and receive buffers.
+</P>
+<P>The 4 lines of variables that begin with "np" are info about the
+processor decompositions of the global FFT grid at different stages of
+the FFT.  Fast, mid, slow refer to the x, y, z-pencil decompositions
+between stages of 1d FFTs.  Brick refer to a 3d brick (or 2d
+rectangle) decomposition which is used when exchange = 1 (brick).
+See the <A HREF = "api_setup.html">setup() method</A> doc page for details.
+</P>
+<P>The large set of variables begining is output generated by the <A HREF = "api_tune.html">tune()
+method</A>.  Refer to its doc page for details on trials
+and FFTs/trial (npertrial).  The various input flags and timing
+outputs for each trial are stored in vectors.
+</P>
+<P>To access these variables from C, Fortran, Python, there are get()
+functions which need to be called.  See syntax details in the code
+examples below.
+</P>
+<HR>
+
+<HR>
+
+<P>C++:
+</P>
+<PRE>FFT_SCALAR *work;
+work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); 
+</PRE>
+<PRE>fft->only_1d_ffts(work,1);
+fft->only_remaps(work,work,1);
+fft->only_one_remap(work,work,1,3); 
+</PRE>
+<PRE>printf("3d FFTs with %s library, precision = %s\n",
+  fft->fft1d,fft->precision); 
+</PRE>
+<PRE>printf("Memory usage (per-proc) by fftMPI = %g MBytes\n",
+       (double) fft->memusage / 1024/1024); 
+</PRE>
+<PRE>printf("Tuning trials & iterations: %d %d\n",fft->ntrial,fft->npertrial);
+for (int i = 0; i < fft->ntrial; i++)
+  printf("  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: "
+         "%d %d %d %g %g %g %g %g %g %g\n",
+         fft->cflags[i],fft->eflags[i],fft->pflags[i],
+         fft->tfft[i],fft->t1d[i],fft->tremap[i],
+         fft->tremap1[i],fft->tremap2[i],
+         fft->tremap3[i],fft->tremap4[i]); 
+</PRE>
+<P>The "fft" pointer is created by instantiating an instance of the
+<A HREF = "api_create.html">FFT3d class</A>.
+</P>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<HR>
+
+<P>C:
+</P>
+<PRE>void *fft;     // set by <A HREF = "api_create.html">fft3d_create()</A>
+FFT_SCALAR *work;
+work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); 
+</PRE>
+<PRE>fft3d_only_1d_ffts(fft,work,1);
+fft3d_only_remaps(fft,work,work,1);
+fft3d_only_one_remap(fft,work,work,1,3); 
+</PRE>
+<PRE>int tmp;
+char *fft1d = fft3d_get_string(fft,"fft1d",&tmp),
+char *precision = fft3d_get_string(fft,"precision",&tmp);
+printf("3d FFTs with %s library, precision = %s\n",fft1d,precision); 
+</PRE>
+<PRE>double memusage = (double) fft3d_get_int64(fft,"memusage") / 1024/1024;
+printf("Memory usage (per-proc) by fftMPI = %g MBytes\n",memusage); 
+</PRE>
+<PRE>int ntrial = fft3d_get_int(fft,"ntrial");
+int npertrial = fft3d_get_int(fft,"npertrial");
+int npertrial = fft3d_get_int(fft,"npertrial"//c_null_char)
+printf("Tuning trials & iterations: %d %d\n",ntrial,npertrial);
+int *cflags = fft3d_get_int_vector(fft,"cflags",&tmp);
+int *eflags = fft3d_get_int_vector(fft,"eflags",&tmp);
+int *pflags = fft3d_get_int_vector(fft,"pflags",&tmp);
+double *tfft = fft3d_get_double_vector(fft,"tfft",&tmp);
+double *t1d = fft3d_get_double_vector(fft,"t1d",&tmp);
+double *tremap = fft3d_get_double_vector(fft,"tremap",&tmp);
+double *tremap1 = fft3d_get_double_vector(fft,"tremap1",&tmp);
+double *tremap2 = fft3d_get_double_vector(fft,"tremap2",&tmp);
+double *tremap3 = fft3d_get_double_vector(fft,"tremap3",&tmp);
+double *tremap4 = fft3d_get_double_vector(fft,"tremap4",&tmp);
+for (int i = 0; i < ntrial; i++)
+  printf("  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: "
+         "%d %d %d %g %g %g %g %g %g %g\n",
+         cflags<B>i</B>,eflags<B>i</B>,pflags<B>i</B>,
+         tfft<B>i</B>,t1d<B>i</B>,tremap<B>i</B>,
+         tremap1<B>i</B>,tremap2<B>i</B>,tremap3<B>i</B>,tremap4<B>i</B>); 
+</PRE>
+<P>The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+</P>
+<P>The fft3d_get() functions retrieve the value of an internal public
+variable.  The word(s) after "get" is the type of the variable as
+stored in the FFT class.  The type is listed in the API section above
+for each variable.  The 3 variants that return pointers also return
+the integer length of the returned vector as the last argument of the
+method.
+</P>
+<HR>
+
+<P>Fortran:
+</P>
+<PRE>type(c_ptr) :: fft    ! set by <A HREF = "api_create.html">fft3d_create()</A>
+real(4), allocatable, target :: work(:)      ! single precision
+real(8), allocatable, target :: work(:)      ! double precision
+allocate(work(2*fftsize)) 
+</PRE>
+<PRE>call fft3d_only_1d_ffts(fft,c_loc(work),1)
+call fft3d_only_remaps(fft,c_loc(work),c_loc(work),1)
+call fft3d_only_one_remap(fft,c_loc(work),c_loc(work),1,3) 
+</PRE>
+<P>integer tmp,nlen
+real(8) memusage
+integer, pointer :: cflags(:) => null()
+integer, pointer :: eflags(:) => null()
+integer, pointer :: pflags(:) => null()
+real(8), pointer :: tfft(:) => null()
+real(8), pointer :: t1d(:) => null()
+real(8), pointer :: tremap(:) => null()
+real(8), pointer :: tremap1(:) => null()
+real(8), pointer :: tremap2(:) => null()
+real(8), pointer :: tremap3(:) => null()
+real(8), pointer :: tremap4(:) => null()
+character(c_char), pointer :: libstr(:) => null()
+character(c_char), pointer :: precstr(:) => null()
+type(c_ptr) :: ptr
+</P>
+<P>ptr = fft3d_get_string(fft,"fft1d"//c_null_char,nlen)
+call c_f_pointer(ptr,libstr,<B>nlen</B>)
+ptr = fft3d_get_string(fft,"precision"//c_null_char,nlen)
+call c_f_pointer(ptr,precstr,<B>nlen</B>)
+print *,"3d FFTs with ",libstr," library, precision = ",precstr
+</P>
+<P>memusage = 1.0*fft3d_get_int64(fft,"memusage"//c_null_char) / 1024/1024
+print *,"Memory usage (per-proc) by fftMPI =",memusage,"MBytes"
+</P>
+<P>ntrial = fft3d_get_int(fft,"ntrial"//c_null_char)
+npertrial = fft3d_get_int(fft,"npertrial"//c_null_char)
+print *,"Tuning trials & iterations:",ntrial,npertrial
+ptr = fft3d_get_int_vector(fft,"cflags"//c_null_char,nlen)
+call c_f_pointer(ptr,cflags,<B>nlen</B>)
+ptr = fft3d_get_int_vector(fft,"eflags"//c_null_char,nlen)
+call c_f_pointer(ptr,eflags,<B>nlen</B>)
+ptr = fft3d_get_int_vector(fft,"pflags"//c_null_char,nlen)
+call c_f_pointer(ptr,pflags,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"tfft"//c_null_char,nlen)
+call c_f_pointer(ptr,tfft,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"t1d"//c_null_char,nlen)
+call c_f_pointer(ptr,t1d,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"tremap"//c_null_char,nlen)
+call c_f_pointer(ptr,tremap,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"tremap1"//c_null_char,nlen)
+call c_f_pointer(ptr,tremap1,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"tremap2"//c_null_char,nlen)
+call c_f_pointer(ptr,tremap2,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"tremap3"//c_null_char,nlen)
+call c_f_pointer(ptr,tremap3,<B>nlen</B>)
+ptr = fft3d_get_double_vector(fft,"tremap4"//c_null_char,nlen)
+call c_f_pointer(ptr,tremap4,<B>nlen</B>)
+do i = 1,ntrial
+  print *,"  coll exch pack 3dfft 1dfft remap r1 r2 r3 r4:", &
+          cflags(i),eflags(i),pflags(i),tfft(i),t1d(i),tremap(i), &
+          tremap1(i),tremap2(i),tremap3(i),tremap4(i)
+enddo
+</P>
+<P>The fft3d_get() functions retrieve the value of an internal public
+variable.  The word(s) after "get" is the type of the variable as
+stored in the FFT class.  The type is listed in the API section above
+for each variable.  The 3 variants that return pointers also return
+the integer length of the returned vector as the last argument of the
+method.
+</P>
+<P>Note how a NULL character (c_null_char) must be appended
+to the strings passed as an argument in the get() functions,
+in order for fftMPI to use them properly as C-style strings.
+</P>
+<HR>
+
+<P>Python:
+</P>
+<PRE>import numpy as np
+work = np.zeros(2*fftsize,np.float32)    # single precision
+work = np.zeros(2*fftsize,np.float)      # double precision 
+</PRE>
+<PRE>fft.only_1d_ffts(work,1)
+fft.only_remaps(work,work,1)
+fft.only_one_remap(work,work,1,3) 
+</PRE>
+<PRE>print "3d FFTs with %s library, precision = %s" %   (fft.get_string("fft1d"),fft.get_string("precision")) 
+</PRE>
+<PRE>print "Memory usage (per-proc) by fftMPI = %g MBytes" %   (float(fft.get_int64("memusage")) / 1024/1024) 
+</PRE>
+<P>ntrial = fft.get_int("ntrial")
+npertrial = fft.get_int("npertrial")
+print "Tuning trials & iterations: %d %d" % (ntrial,npertrial)
+for i in range(ntrial):
+  print "  coll exch pack 3dFFT 1dFFT remap r1 r2 r3 r4: " +     "%d %d %d %g %g %g %g %g %g %g" %     (fft.get_int_vector("cflags")<B>i</B>,fft.get_int_vector("eflags")<B>i</B>,
+     fft.get_int_vector("pflags")<B>i</B>,fft.get_double_vector("tfft")<B>i</B>,
+     fft.get_double_vector("t1d")<B>i</B>,fft.get_double_vector("tremap")<B>i</B>,
+     fft.get_double_vector("tremap1")<B>i</B>,
+     fft.get_double_vector("tremap2")<B>i</B>,
+     fft.get_double_vector("tremap3")<B>i</B>,
+     fft.get_double_vector("tremap4")<B>i</B>)
+</P>
+<P>The "fft" object is created by instantiating an instance
+of the <A HREF = "api_create.html">FFT3dMPI class</A>.
+</P>
+<P>The get() functions retrieve the value of an internal public variable.
+The word(s) after "get" is the type of the variable as stored in the FFT
+class.  The type is listed in the API section above for each variable.
+</P>
+</HTML>

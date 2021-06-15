@@ -1,0 +1,327 @@
+"fftMPI documentation"_Manual.html
+
+API for all Remap methods :h3
+
+These methods work with instances of the Remap3d and Remap2d classes.
+They just perform data remaps of a 3d or 2d array, but not FFTs.  The
+FFT3d and FFT2d classes intstantiate and use their own Remap classes
+to perform a data remap, which mean to move data to new processors and
+reorder it.  The Remap classes can be used by themselves if your
+application needs to remap data for its own purposes.
+
+Currently the Remap classes only work with floating point data (32-bit
+or 64-bit).  Each datum in a distributed 3d or 2d grid can be 1 or
+more floating point values.  E.g. the FFT classes use the Remap
+classes with 2 values (real, imaginary) per grid point.  Note that you
+could remap a 4 or higher dimension grid of floating point values if
+you are willing to store it as a distributed 3d grid with multiple
+contiguous values for the higher dimensions.  We may add a capability
+for remapping generalized data types (e.g. ints or structs) in the
+future.
+
+All of the Remap methods are similar to corresponding FFT methods.  The
+code examples are for 3d Remaps.  Just replace "3d" by "2d" for 2d
+Remaps.
+
+As with the FFT classes, multiple instances of the Remap can be
+instantiated by the calling program, e.g. if you need to define Remaps
+wtih different input or output distributions of data across
+processors.  The MPI communicator argument for the constructor defines
+the set of processors which share the Remap data and perform the
+parallel Remap.
+
+:line
+
+API:
+
+Remap3d(MPI_Comm comm, int precision);     // constructor
+~Remap3d();                                // destructor :pre
+
+int collective = 0/1 = point/all (default = 1)             // 3 variables
+int packflag = array/ptr/memcpy = 0/1/2 (default = 2)
+int memoryflag = 0/1 (default = 1) :pre
+
+void setup(int in_ilo, int in_ihi, int in_jlo,             // 3d version
+           int in_jhi, int in_klo, int in_khi,
+           int out_ilo, int out_ihi, int out_jlo, 
+           int out_jhi, int out_klo, int out_khi,
+           int nqty, int permute, int memoryflag,
+           int &sendsize, int &recvsize) :pre
+
+void setup(int in_ilo, int in_ihi, int in_jlo, int in_jhi,     // 2d version
+           int out_ilo, int out_ihi, int out_jlo, int out_jhi,
+           int nqty, int permute, int memoryflag,
+           int &sendsize, int &recvsize) :pre
+
+void remap(FFT_SCALAR *in, FFT_SCALAR *out, FFT_SCALAR sendbuf, FFT_SCALAR recvbuf); :pre
+
+The Remap3d() and ~Remap3d() methods create and destroy an instance of
+the Remap3d class.
+
+The comm argument is an MPI communicator.  The precision argument is 1
+for single-precision (32-bit floating point numbers) and 2 for
+double-precision (64-bit floating point numbers).  The precision is
+checked by the fftMPI library to insure it was compiled with a
+matching precision.  See the "compile"_compile.html doc page for how
+to compile fftMPI for single versus double precision.
+
+The "collective, packflag, memoryflag" lines are public variables
+within the Remap class which can be set to enable option.  All of them
+have reasonable default settings.  So you typically don't need to
+reset them.  If reset, they must be set before the setup() call.  Once
+setup() is invoked, changing them has no effect.
+
+The meaning of the variables is exactly the same as for the FFT
+classes.  See the "setup API"_setup_api.html doc page for an
+explanation.  Note that for remaps, the collective variable has only
+two settings (0,1).  There is no collective = 2 option like there is
+for FFTs.
+
+:line
+
+The setup() method can only be called once.  Only the 3d case is
+illustrated below for each language; the 2d analogs should be clear.
+
+The meaning of the "in/out ijk lo/hi" indices is exactly the same as
+for the FFT setup() method, as explained on the "setup
+API"_api_setup.html doc page (with examples).  Note that unlike for
+FFTs, the sizes of each dimension of the global 3d (nfast,nmid,nslow)
+or 2d grid (nfast,nslow) are not arguments to the Remap setup()
+method.  However the "in/out ijk lo/hi" indices define the same tiles
+of the 3d or 2d global grid that each processor owns before and after
+the remap operation.
+
+As explained on the "layout"_layout.html doc page, a tile is a brick
+in 3d or rectangle in 2d.  Each index can range from 0 to N-1
+inclusive, where N is the corresponding global grid dimension.  The
+lo/hi indices are the first and last point (in that dimension) that
+the processor owns.  If a processor owns no grid point (e.g. on
+input), then its lo index (in one or more dimensions) should be one
+larger than its hi index.
+
+IMPORTANT NOTE: When calling the Remap classes from Fortran, the index
+ranges are from 1 to N inclusive, not 0 to N-1.
+
+As also explained on the "layout"_layout.html doc page, the "in/out
+ijk lo/hi" indices do NOT refer to dimensions x or y or z in a spatial
+sense.  Rather they refer to the ordering of grid points in the
+caller's memory for the 3d "brick" of grid points that each processor
+owns.  The points in the nfast dimension are consecutive in memory,
+points in the nmid dimension are separated by stride nfast in memory,
+and points in the nslow dimension are separated by stride nfast*nmid.
+For remaps, the nfast, nmid, nslow global grid size (or nfast, nslow
+in 2d) are not input arguments, but they are implied by the input and
+output tilings.
+
+The "nqty" argument is the number of floating point values per
+grid point.  The FFT classes call the Remap classes with nqty=2
+for a complex value (real, imaginary) per grid point.
+
+IMPORTANT NOTE: It is up to the calling app to insure that a valid
+tiling of the global grid across all processors is passed to fftMPI.
+As explained on the "layout"_layout.html doc page, "valid" means that
+every grid point is owned by a unique processor and the union of all
+the tiles is the global grid.
+
+Finally, the permute argument triggers a permutation in storage order
+of fast/mid/slow for the remap output, the same as for FFT output for
+the FFT "setup() method"_api_setup.html.  A value of 0 means no
+permutation.  A value of 1 means permute once = mid->fast, slow->mid,
+fast->slow.  A value of 2 means permute twice = slow->fast, fast->mid,
+mid->slow. For 2d remaps, the only allowed permute values are 0,1.
+
+The returned sendsize and recvsize are the length of buffers needed to
+perform the MPI sends and receives for the data remapping operation.
+If the memoryflag variable is set to 1 (the default), fftMPI will
+allocate these buffers.  The caller can ignore sendsize and recvsize.
+If the memoryflag variable is set to 0, the caller must allocate the
+two buffers of these lengths and pass them as arguments to the remap()
+method, as explained next.
+
+:line
+
+For the remap() method, The FFT_SCALAR datatype is defined by fftMPI
+to be "double" (64-bit) or "float" (32-bit) for double-precision or
+single-precision FFTs.
+
+The "in" pointer is the input data to the remap, stored as a 1d vector of
+contiguous memory for the grid points this processor owns.
+
+The "out" pointer is the output data from the remap, also stored as a
+1d vector of contiguous memory for the grid points this processor
+owns.
+
+:line
+:line
+
+C++:
+
+#include "remap3d.h"
+using namespace FFTMPI_NS; :pre
+
+MPI_Comm world = MPI_COMM_WORLD;
+int precision = 2; :pre
+
+Remap3d *remap = new Remap3d(world,precision);
+delete remap; :pre
+
+int cflag,pflag,mflag;
+int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi;
+int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+int nqty,permute,memoryflag,sendsize,recvsize; :pre
+
+remap->collective = cflag;
+remap->packflag = pflag;
+remap->memoryflag = mflag; :pre
+
+remap->setup(nfast,nmid,nslow,
+             in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+             out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+             nqty,permute,memoryflag,sendsize,recvsize); :pre
+
+int insize = (in_ihi-in_ilo+1) * (in_jhi-in_jlo+1) * (in_khi-in_klo+1);
+int outsize = (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * (out_khi-out_klo+1);
+int remapsize = (insize > outsize) ? insize : outsize;
+FFT_SCALAR *work = (FFT_SCALAR *) malloc(remapsize*sizeof(FFT_SCALAR));
+FFT_SCALAR *sendbuf = (FFT_SCALAR *) malloc(sendsize*sizeof(FFT_SCALAR));
+FFT_SCALAR *recvbuf = (FFT_SCALAR *) malloc(recvsize*sizeof(FFT_SCALAR)); :pre
+
+remap->remap(work,work,sendbuf,recvbuf); :pre
+
+The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+
+The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+
+:line
+
+C:
+
+#include "remap3d_wrap.h" :pre
+
+MPI_Comm world = MPI_COMM_WORLD;
+int precision = 2; :pre
+
+void *remap;
+remap3d_create(world,precision,&remap);
+remap3d_destroy(remap); :pre
+
+int cflag,pflag,mflag;
+int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi;
+int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+int nqty,permute,memoryflag,sendsize,recvsize; :pre
+
+remap3d_set(remap,"collective",cflag);
+remap3d_set(remap,"pack",pflag);
+remap3d_set(remap,"memory",mflag); :pre
+
+remap3d_setup(nfast,nmid,nslow,
+              in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+              out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+              nqty,permute,memoryflag,&sendsize,&recvsize); :pre
+
+int insize = (in_ihi-in_ilo+1) * (in_jhi-in_jlo+1) * (in_khi-in_klo+1);
+int outsize = (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * (out_khi-out_klo+1);
+int remapsize = (insize > outsize) ? insize : outsize;
+FFT_SCALAR *work = (FFT_SCALAR *) malloc(remapsize*sizeof(FFT_SCALAR));
+FFT_SCALAR *sendbuf = (FFT_SCALAR *) malloc(sendsize*sizeof(FFT_SCALAR));
+FFT_SCALAR *recvbuf = (FFT_SCALAR *) malloc(recvsize*sizeof(FFT_SCALAR)); :pre
+
+remap3d_remap(remap,work,work,sendbuf,recvbuf); :pre
+
+The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+
+The FFT_SCALAR datatype is defined by fftMPI to be "double" (64-bit)
+or "float" (32-bit) for double-precision or single-precision FFTs.
+
+:line
+
+Fortran:
+
+include 'mpif.h'
+use iso_c_binding
+use remap3d_wrap :pre
+
+integer world,precision
+type(c_ptr) :: remap :pre
+
+world = MPI_COMM_WORLD
+precision = 2 :pre
+
+call remap3d_create(world,precision,remap)
+call remap3d_destroy(remap) :pre
+
+integer cflag,pflag,mflag
+integer in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi
+integer out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi
+integer nqty,permute,memoryflag,sendsize,recvsize :pre
+
+call remap3d_set(remap,"collective",cflag)
+call remap3d_set(remap,"pack",pflag)
+call remap3d_set(remap,"memory",mflag) :pre
+
+call remap3d_setup(remap,nfast,nmid,nslow, &
+                   in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
+                   out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
+                   nqty,permute,memoryflag,sendsize,recvsize) :pre
+
+integer insize,outsize,remapsize
+real(4), allocatable, target :: work(:),sendbuf(:),recvbuf(:)  ! single precision
+real(8), allocatable, target :: work(:),sendbuf(:),recvbuf(:)  ! double precision
+insize = (in_ihi-in_ilo+1) * (in_jhi-in_jlo+1) * (in_khi-in_klo+1)
+outsize = (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * (out_khi-out_klo+1)
+remapsize = max(insize,outsize)
+allocate(work(remapsize))
+allocate(sendbuf(sendsize))
+allocate(sendbuf(recvsize)) :pre
+
+call remap3d_remap(remap,c_loc(work),c_loc(work),c_loc(sendbuf),c_loc(recvbuf)) :pre
+
+For Fortran, the "in i/j/k lo/hi" indices then range from 1 to N
+inclusive, where N is nfast, nmid, or nslow.  Unlike the other
+languages discussed on this page where the indices range from 0 to N-1
+inclusive.
+
+:line
+
+Python:
+
+import numpy as np
+from fftmpi import Remap3dMPI
+from mpi4py import MPI :pre
+
+world = MPI.COMM_WORLD
+precision = 2 :pre
+
+remap = Remap3dMPI(world,precision)
+del remap :pre
+
+cflag = 1
+pflag = 0
+... :pre
+
+remap.set("collective",cflag)
+remap.set("pack",pflag)
+remap.set("memory",mflag) :pre
+
+sendsize,recvsize = \
+   remap.setup(nfast,nmid,nslow,in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+               out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+               nqty,permute,memoryflag) :pre
+
+insize = (in_ihi-in_ilo+1) * (in_jhi-in_jlo+1) * (in_khi-in_klo+1)
+outsize = (out_ihi-out_ilo+1) * (out_jhi-out_jlo+1) * (out_khi-out_klo+1)
+remapsize = max(insize,outsize)
+work = np.zeros(remapsize,np.float32)     # single precision
+sendbuf = np.zeros(sendsize,np.float32)
+recvbuf = np.zeros(recvsize,np.float32)
+work = np.zeros(remapsize,np.float)       # double precision
+sendbuf = np.zeros(sendsize,np.float)
+recvbuf = np.zeros(sendsize,np.float) :pre
+
+remap.remap(work,work,sendbuf,recvbuf) :pre
+
+The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.

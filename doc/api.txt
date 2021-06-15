@@ -1,0 +1,244 @@
+"fftMPI documentation"_Manual.html
+
+API overview and simple example code :h3
+
+The fftMPI library has 4 classes: FFT3d, FFT2d, Remap3d, Remap2d.  The
+FFT classes perform 3d and 2d FFTs.  The Remap classes perform a data
+remap, which communicates and reorders the data that is distributed 3d
+and 2d arrays across processors.  They can be used if you want to only
+rearrange data, but not perform an FFT.
+
+The basic way to use either of the FFT classes is to instantiate the
+class and call setup() once to define how the FFT grid is distributed
+across processors for both input to and output from the FFT.  Then
+invoke the compute() method as many times as needed to perform forward
+and/or backward FFTs.  Destruct the class when you are done using it.
+
+Example code to do all of this for 3d FFTs in C++ is "shown
+below"_#code.  This code is a copy of the test/simple.cpp file.  There
+are also equivalent files in the test dir for C, Fortran, and Python:
+simple_c.c, simple_f90.f90, and simple.py.
+
+If a different size FFT or different grid distribution is needed, the
+FFT classes can be intstantiated as many times as needed.
+
+Using the Remap classes is similar, where the remap() method replaces
+compute().
+
+The choice to operate on single versus double precision data must be
+made at compile time, as explained on the "compile"_compile.html doc
+page.
+
+These are the methods that can be called for either the FFT3d or FFT2d
+classes:
+
+"constructor and destructor"_api_create.html
+"setup()"_api_setup.html = define grid size and input/output layouts
+"setup_memory()"_api_setup.html = caller provide memory for FFT to use
+"set()"_api_setup.html = set a parameter affecting how FFT is performed
+"tune()"_api_tune.html = auto-tune paramters that affect how FFT is performed
+"compute()"_api_compute.html = compute a single forward or backward FFT
+"only_1d_ffts()"_api_stats.html = compute just 1d FFTs, no data movement
+"only_remaps()"_api_stats.html = just data movement, no FFTs
+"only_one_remap()"_api_stats.html = just one pass of data movement
+"get()"_api_stats.html = query parameter or timing information :ul
+
+See these apps in the test dir for examples of how all these
+methods are called from different languages:
+
+test3d.cpp, test3d_c.cpp, test3d_f90.f90, test3d.py
+test2d.cpp, test2d_c.cpp, test2d_f90.f90, test2d.py :ul
+
+These are methods that can be called for either the Remap3d or Remap2d
+classes:
+
+"constructor and destructor"_api_remap_create.html"
+"setup()"_api_remap_setup.html = define grid size and input/output layouts
+"set()"_api_remap_set.html = set a parameter affecting how Remap is performed
+"remap()"_api_remap_remap.html = perform the the Remap :ul
+
+:line
+:line
+
+Simple example code :h3,link(code)
+
+These files in the text dir of the fftMPI distribution compute
+a forward/backward FFT on any number of procs.  The size of the
+FFT is hardcoded at the top of the file.  Each file is about 150
+lines with comments:
+
+simple.cpp
+simple_c.c
+simple_f90.f90
+simple.py :ul
+
+You should be able to compile/run any of them as as follows:
+
+cd test
+make simple
+mpirun -np 4 simple            # run C++ example on 4 procs
+simple_c                       # run C example on 1 proc
+mpirun -np 10 simple_f90       # run Fortran example on 10 procs
+mpirun -np 6 python simple.py  # run Python example on 6 procs
+
+You must link to the fftMPI library built for double-precision FFTs.
+In the simple source codes, you could replace "3d" by "2d" for 2d FFTs.  
+
+The C++ code is in the next section.
+
+:line
+
+// Compute a forward/backward double precision complex FFT using fftMPI
+// change FFT size by editing 3 "FFT size" lines
+// run on any number of procs :pre
+
+// Run syntax:
+// % simple               # run in serial
+// % mpirun -np 4 simple  # run in parallel :pre
+
+#include <mpi.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdint.h> :pre
+
+#include "fft3d.h" :pre
+
+using namespace FFTMPI_NS; :pre
+
+// FFT size :pre
+
+#define NFAST 128
+#define NMID 128
+#define NSLOW 128 :pre
+
+// precision-dependent settings :pre
+
+#ifdef FFT_SINGLE
+int precision = 1;
+#else
+int precision = 2;
+#endif :pre
+
+// main program :pre
+
+int main(int narg, char **args)
+\{
+  // setup MPI :pre
+
+  MPI_Init(&narg,&args);
+  MPI_Comm world = MPI_COMM_WORLD; :pre
+
+  int me,nprocs;
+  MPI_Comm_size(world,&nprocs);
+  MPI_Comm_rank(world,&me); :pre
+
+  // instantiate FFT :pre
+
+  FFT3d *fft = new FFT3d(world,precision); :pre
+
+  // simple algorithm to factor Nprocs into roughly cube roots :pre
+
+  int npfast,npmid,npslow; :pre
+
+  npfast = (int) pow(nprocs,1.0/3.0);
+  while (npfast < nprocs) \{
+    if (nprocs % npfast == 0) break;
+    npfast++;
+  \}
+  int npmidslow = nprocs / npfast;
+  npmid = (int) sqrt(npmidslow);
+  while (npmid < npmidslow) \{
+    if (npmidslow % npmid == 0) break;
+    npmid++;
+  \}
+  npslow = nprocs / npfast / npmid; :pre
+
+  // partition grid into Npfast x Npmid x Npslow bricks :pre
+
+  int nfast,nmid,nslow;
+  int ilo,ihi,jlo,jhi,klo,khi; :pre
+
+  nfast = NFAST;
+  nmid = NMID;
+  nslow = NSLOW; :pre
+
+  int ipfast = me % npfast;
+  int ipmid = (me/npfast) % npmid;
+  int ipslow = me / (npfast*npmid); :pre
+
+  ilo = (int) 1.0*ipfast*nfast/npfast;
+  ihi = (int) 1.0*(ipfast+1)*nfast/npfast - 1;
+  jlo = (int) 1.0*ipmid*nmid/npmid;
+  jhi = (int) 1.0*(ipmid+1)*nmid/npmid - 1;
+  klo = (int) 1.0*ipslow*nslow/npslow;
+  khi = (int) 1.0*(ipslow+1)*nslow/npslow - 1; :pre
+
+  // setup FFT, could replace with tune() :pre
+
+  int fftsize,sendsize,recvsize;
+  fft->setup(nfast,nmid,nslow,
+             ilo,ihi,jlo,jhi,klo,khi,ilo,ihi,jlo,jhi,klo,khi,
+             0,fftsize,sendsize,recvsize); :pre
+
+  // tune FFT, could replace with setup() :pre
+
+  //fft->tune(nfast,nmid,nslow,
+  //          ilo,ihi,jlo,jhi,klo,khi,ilo,ihi,jlo,jhi,klo,khi,
+  //          0,fftsize,sendsize,recvsize,0,5,10.0,0); :pre
+
+  // initialize each proc's local grid
+  // global initialization is specific to proc count :pre
+
+  FFT_SCALAR *work = (FFT_SCALAR *) malloc(2*fftsize*sizeof(FFT_SCALAR)); :pre
+
+  int n = 0;
+  for (int k = klo; k <= khi; k++) \{
+    for (int j = jlo; j <= jhi; j++) \{
+      for (int i = ilo; i <= ihi; i++) \{
+        work\[n\] = (double) n;
+        n++;
+        work\[n\] = (double) n;
+        n++;
+      \}
+    \}
+  \} :pre
+
+  // perform 2 FFTs :pre
+
+  double timestart = MPI_Wtime();
+  fft->compute(work,work,1);        // forward FFT
+  fft->compute(work,work,-1);       // backward FFT
+  double timestop = MPI_Wtime(); :pre
+
+  if (me == 0) \{
+    printf("Two %dx%dx%d FFTs on %d procs as %dx%dx%d grid\n",
+           nfast,nmid,nslow,nprocs,npfast,npmid,npslow);
+    printf("CPU time = %g secs\n",timestop-timestart);
+  \} :pre
+
+  // find largest difference between initial/final values
+  // should be near zero :pre
+
+  n = 0;
+  double mydiff = 0.0;
+  for (int k = klo; k <= khi; k++) \{
+    for (int j = jlo; j <= jhi; j++) \{
+      for (int i = ilo; i <= ihi; i++) \{
+        if (fabs(work\[n\]-n) > mydiff) mydiff = fabs(work\[n\]-n);
+        n++;
+        if (fabs(work\[n\]-n) > mydiff) mydiff = fabs(work\[n\]-n);
+        n++;
+      \}
+    \}
+  \} :pre
+
+  double alldiff;
+  MPI_Allreduce(&mydiff,&alldiff,1,MPI_DOUBLE,MPI_MAX,world);  
+  if (me == 0) printf("Max difference in initial/final values = %g\n",alldiff); :pre
+
+  // clean up :pre
+
+  free(work);
+  delete fft;
+  MPI_Finalize();
+\} :pre

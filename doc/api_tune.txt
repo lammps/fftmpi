@@ -1,0 +1,204 @@
+"fftMPI documentation"_Manual.html
+
+API for FFT tune() :h3
+
+This fftMPI method performs auto-tuning of the collective, exchange,
+and packflag variables listed on the "setup"_api_setup.html dic page
+to determine which settings produce the fastest FFT.  The code
+examples at the bottom of the page are for 3d FFTs.  Just replace "3d"
+by "2d" for 2d FFTs.  Note that the tune() method has a 3d and 2d
+version.
+
+An alternative to the tune() method is the setup() method described on
+the "setup API"_api_setup.html doc page.  In this case the 3 variables
+are set explicitly before calling setup().  One or the other method
+must be invoked before computing actual FFTs, but not both.
+
+:line
+
+API:
+
+void tune(int nfast, int nmid, int nslow,             // 3d verion
+          int in_ilo, int in_ihi, int in_jlo, 
+          int in_jhi, int in_klo, int in_khi,
+          int out_ilo, int out_ihi, int out_jlo, 
+          int out_jhi, int out_klo, int out_khi,
+          int permute, int &fftsize, int &sendsize, int &recvsize,
+          int flag, int niter, double tmax, int tflag); :pre
+
+void tune(int nfast, int nslow,                       // 2d verion
+          int in_ilo, int in_ihi, int in_jlo, int in_jhi,
+          int out_ilo, int out_ihi, int out_jlo, int out_jhi,
+          int permute, int &fftsize, int &sendsize, int &recvsize,
+          int flag, int niter, double tmax, int tflag); :pre
+
+:line
+
+The tune() method sets the internal values of the collective,
+exchange, packflag variables discussed on the "setup
+API"_api_setup.html doc page by performing a series of trial runs,
+where one or more FFTs with the global grid size and data layout.
+
+The trial FFTs use dummy FFT grids allocated internally by fftMPI
+and filled with zeroes.  If memory is an issue in your application,
+it does not need to allocate its own memory for FFT grids until
+after tune() is complete.
+
+The final values of the 3 variables can be queried after tuning is
+complete via the methods discussed on the "stats API"_api_stats.html
+doc page.
+
+All the arguments from nfast to recvsize have the same meaning for
+tune() as they do for the setup() method, discssed on the "setup
+API"_api_setup.html doc page.  This means all the FFT trials will be
+run on the same size global grid and with the same initial/final data
+tilings as the eventual actual FFTs.
+
+If flag is set to 0, pairs of forward and backward FFTs are performed
+in the trials.  If flag is set to 1, only forward FFTs are performed
+in the trials.  If flag is set to -1, only backward FFTs are performed
+in the trials.
+
+The niter argument sets how many FFTs are performed in each trial (or
+pairs of FFTs for flag = 0).
+
+The tmax argument sets a time limit (in CPU seconds) for how long the
+tune operation will take.  A value of 0.0 means no time limit is
+enforced.
+
+If tflag is set to 0, only full FFTs will be timed.  If tflag is set
+to 1, 1d FFTs and data remapping operations will also be timed.
+
+Timing data for all operations (2d/3d FFT, optional 1d FFTs only,
+optional data remappings) for each timing trial can be queried after
+tuning is complete via the methods discussed on the "stats
+API"_api_stats.html doc page.
+
+A sequence of 9 trial runs is performed as follows:
+
+First, a test run of a single forward FFT is performed using the
+current values of the collective, exchange, packflag variables.  Its
+CPU cost is used to estimate the time needed for all the trials.  If
+this time exceeds tmax, then less trials are performed, as explained
+below. :ulb,l
+
+Six trials are performed using all combinations of the collective and
+exchange variable.  I.e. collective = 0,1,2; exchange = 0,1.  The
+fastest of these 6 trials sets the value of collective and
+exchange. :l
+
+Three trials are performed for packflag = 1,2,3, using the optimal
+collective and exchange values.  The fastest of these 3 trials sets
+the value packflag. :l,ule
+
+If performing all 9 trials with niter FFTs per trial will take more
+time than tmax, the following logic is invoked to limit the tuning
+time:
+
+Reduce niter to less than the requested value and perform the 9
+trials. :ulb,l
+
+If more time reduction is needed even with niter = 1, only perform the
+first 6 trials (to set collective, exchange).  Set packflag to its
+default value of 2. :l
+
+If more time reduction is needed, only perform 3 trials (to set
+collective).  Set exchange to its default value of 0 and packflag
+to its default value of 2. :l
+
+If more time reduction is needed, only perform 2 trials with
+collective = 1,2.  Set exchange to its default value of 0 and packflag
+to its default value of 2. :l
+
+If more time reduction is needed, and the initial collective,
+exchange, packflag are variables do not have default values, perform
+just 1 trial with default values assigned to the 3 variables. :l
+
+If no trials can be performed (i.e. the single forward FFT exceeded
+tmax/2), just leave the collective, exchange, packflag variables set
+to their initial values, and use the test run results as the first and
+only trial. :l,ule
+
+:line
+:line
+
+C++:
+
+void *fft;     // set by "fft3d_create()"_api_create.html
+int nfast,nmid,nslow;
+int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi;
+int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+int permute,fftsize,sendsize,recvsize;
+int flag,niter,tflag;
+double tmax; :pre
+
+fft->tune(nfast,nmid,nslow,
+          in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+          out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+          permute,fftsize,sendsize,recvsize,
+          flag,niter,tmax,tflag); :pre
+
+The "fft" pointer is created by instantiating an instance of the
+"FFT3d class"_api_create.html.
+
+The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+
+:line
+
+C:
+
+int nfast,nmid,nslow;
+int in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi;
+int out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi;
+int permute,fftsize,sendsize,recvsize;
+int flag,niter,tflag;
+double tmax; :pre
+
+fft3d_tune(fft,nfast,nmid,nslow,
+           in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+           out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,
+           permute,&fftsize,&sendsize,&recvsize,
+           flag,niter,tmax,tflag); :pre
+
+The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
+
+:line
+
+Fortran:
+
+type(c_ptr) :: fft    ! set by "fft3d_create()"_api_create.html :pre
+
+integer nfast,nmid,nslow
+integer in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi
+integer out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi
+integer permute,fftsize,sendsize,recvsize
+inteter flag,niter,tflag
+real(8) tmax :pre
+
+call fft3d_tune(fft,nfast,nmid,nslow, &
+                in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi, &
+                out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi, &
+                permute,fftsize,sendsize,recvsize,
+                flag,niter,tmax,tflag) :pre
+
+For Fortran the "in i/j/k lo/hi" indices then range from 1 to N
+inclusive, where N is nfast, nmid, or nslow.  Unlike the other
+languages discussed on this page where the indices range from 0 to N-1
+inclusive.
+
+:line
+
+Python:
+
+fftsize,sendsize,recvsize =
+   fft.tune(nfast,nmid,nslow,in_ilo,in_ihi,in_jlo,in_jhi,in_klo,in_khi,
+            out_ilo,out_ihi,out_jlo,out_jhi,out_klo,out_khi,permute,
+            flag,niter,tmax,tflag) :pre
+
+The "fft" object is created by instantiating an instance
+of the "FFT3dMPI class"_api_create.html.
+
+The "in i/j/k lo/hi" indices range from 0 to N-1 inclusive,
+where N is nfast, nmid, or nslow.
