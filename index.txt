@@ -23,16 +23,15 @@ Fast Fourier Transforms (FFTs) in parallel where the FFT grid is
 distributed across processors.
 
 "Documentation"_doc/Manual.html,
-"GitHub"_https:/github.com/lammps/fftmpi,
-"Download"_https:/www.sandia.gov/~sjplimp/download.html,
+"GitHub"_https://github.com/lammps/fftmpi,
 "Benchmarks"_bench.html,
 "Publications"_papers.html,
 "Library API"_doc/api.html,
-"GitHub"_https://github.com/lammps/fftmpi,
+"Download"_https:/www.sandia.gov/~sjplimp/download.html,
 "Latest features & bug fixes"_bug.html,
 "Open source"_open_source.html,
 .
-:tb(c=5,ea=c,a=c)
+:tb(c=4,ea=c,a=c)
 
 :line
 
