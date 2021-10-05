@@ -29,8 +29,7 @@ distributed across processors.
 "Library API"_doc/api.html,
 "Download"_https:/www.sandia.gov/~sjplimp/download.html,
 "Latest features & bug fixes"_bug.html,
-"Open source"_open_source.html,
-.
+"Open source"_open_source.html
 :tb(c=4,ea=c,a=c)
 
 :line
