@@ -126,6 +126,14 @@ where N = total # of points in the FFT grid (3d or 2d).
 
 :line
 
+If the "remaponly" variable is 1, then a compute() call to perform an
+FFT will do not computation.  Only communication of data will be
+performed.  This is useful for timing the communication portion of an
+FFT or verifying/debugging what the communication operations are
+doing.
+
+:line
+
 The setup() method can only be called once.  Only the 3d case is
 illustrated below for each language; the 2d analogs should be clear.
 
