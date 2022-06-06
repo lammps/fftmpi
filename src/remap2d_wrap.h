@@ -28,7 +28,7 @@ extern "C" {
 /* C interface */
 
 void remap2d_create(MPI_Comm, void **);
-void remap2d_create_fortran(MPI_Comm, void **);
+void remap2d_create_fortran(MPI_Fint, void **);
 void remap2d_destroy(void *);
 void remap2d_set(void *, char *, int);
 void remap2d_setup(void *,

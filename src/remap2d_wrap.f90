@@ -15,6 +15,8 @@
 ! ISO_C_binding wrapper on fftMPI C interface for 2d Remaps
 
 module remap2d_wrap
+
+interface
   subroutine remap2d_create(comm,ptr) &
           bind(c,name='remap2d_create_fortran')
     use iso_c_binding
