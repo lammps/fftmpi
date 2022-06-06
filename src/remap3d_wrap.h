@@ -28,7 +28,7 @@ extern "C" {
 /* C interface */
 
 void remap3d_create(MPI_Comm, void **);
-void remap3d_create_fortran(MPI_Comm, void **);
+void remap3d_create_fortran(MPI_Fint, void **);
 void remap3d_destroy(void *);
 void remap3d_set(void *, char *, int);
 void remap3d_setup(void *,
